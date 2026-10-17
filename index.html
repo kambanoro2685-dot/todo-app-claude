@@ -105,6 +105,15 @@
   li:hover .btn-del, .btn-del:focus-visible { opacity: 1; }
   .btn-del:hover { color: var(--ink); background: var(--bg); }
 
+  .cloud { padding: 0 14px 14px; display: grid; gap: 8px; }
+  .cloud-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .cloud .btn-add { padding: 8px 14px; }
+  .cloud-status { color: var(--muted); font-size: 0.85rem; min-width: 0; overflow-wrap: anywhere; }
+  #cloud-list { border: 1px solid var(--line); border-radius: 10px; }
+  #cloud-list:empty { display: none; }
+  #cloud-list li { padding: 8px 12px; font-size: 0.92rem; justify-content: space-between; }
+  #cloud-list .when { color: var(--muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+
   .empty { padding: 28px 14px; text-align: center; color: var(--muted); }
 
   footer {
@@ -138,6 +147,13 @@
       <textarea id="user-memo" placeholder="メモや補足を自由に書けます" maxlength="500"></textarea>
     </label>
     <p class="hello" id="hello" hidden></p>
+    <div class="cloud">
+      <div class="cloud-row">
+        <button type="button" id="save-cloud" class="btn-add">名前をSupabaseに保存</button>
+        <span id="cloud-status" class="cloud-status" role="status"></span>
+      </div>
+      <ul id="cloud-list" aria-label="Supabaseに保存された名前"></ul>
+    </div>
     <div style="border-top:1px solid var(--line)"></div>
     <form id="add-form">
       <input id="new-task" type="text" placeholder="やることを入力して Enter" autocomplete="off" aria-label="新しいタスク">
@@ -270,6 +286,65 @@
   idInput.addEventListener("input", saveProfile);
   nameInput.addEventListener("input", saveProfile);
   showHello();
+
+  /* Supabase 連携: anon(publishable)キーだけをここに入れる。secret / service_role は入れない */
+  const SB_URL = "https://ehtjtapkmwmsciuexdko.supabase.co";
+  const SB_KEY = "";
+  const SB_TABLE = "Kambanoro2685";
+  const SB_COL = "test氏名";
+
+  const cloudStatus = document.getElementById("cloud-status");
+  const cloudList = document.getElementById("cloud-list");
+  const saveBtn = document.getElementById("save-cloud");
+
+  function sbFetch(path, opts = {}) {
+    return fetch(`${SB_URL}/rest/v1/${SB_TABLE}${path}`, {
+      ...opts,
+      headers: { apikey: SB_KEY, Authorization: "Bearer " + SB_KEY, "Content-Type": "application/json", ...(opts.headers || {}) },
+    }).then(async r => {
+      if (!r.ok) throw new Error(`${r.status} ${(await r.text()).slice(0, 120)}`);
+      return r;
+    });
+  }
+
+  async function loadCloud() {
+    if (!SB_KEY) { cloudStatus.textContent = "Supabaseのキーが未設定です"; saveBtn.disabled = true; return; }
+    try {
+      const rows = await (await sbFetch(`?select=id,created_at,${SB_COL}&order=created_at.desc&limit=10`)).json();
+      cloudList.innerHTML = "";
+      for (const row of rows) {
+        const li = document.createElement("li");
+        const n = document.createElement("span");
+        n.textContent = row[SB_COL] || "(空)";
+        const w = document.createElement("span");
+        w.className = "when";
+        w.textContent = new Date(row.created_at).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        li.append(n, w);
+        cloudList.append(li);
+      }
+      cloudStatus.textContent = rows.length ? `最新${rows.length}件を表示中` : "保存された名前はまだありません";
+    } catch (e) {
+      cloudStatus.textContent = "読み込みに失敗しました: " + e.message;
+    }
+  }
+
+  saveBtn.addEventListener("click", async () => {
+    const name = nameInput.value.trim();
+    if (!name) { cloudStatus.textContent = "名前を入力してください"; return; }
+    saveBtn.disabled = true;
+    cloudStatus.textContent = "保存中…";
+    try {
+      await sbFetch("", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ [SB_COL]: name }) });
+      await loadCloud();
+      cloudStatus.textContent = "保存しました";
+    } catch (e) {
+      cloudStatus.textContent = "保存に失敗しました: " + e.message;
+    } finally {
+      saveBtn.disabled = !SB_KEY;
+    }
+  });
+
+  loadCloud();
 
   render();
 </script>
