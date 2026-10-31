@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>じんせい双六</title>
+<style>
+:root{
+  --bg:#fff7e6;--ink:#3a2e1f;--card:#fffdf8;--line:#e8d9b8;--accent:#ff7a3d;
+  --gain:#c9f0c8;--loss:#ffd0cc;--happy:#ffd9ec;--disaster:#b9323a;--jump:#cfe6ff;--back:#e0d4ff;
+  --skip:#e3e3e3;--again:#fff0a8;--battle:#ffc58a;--lucky:#f6c8ff;--item:#bff3f0;--none:#fffdf8;
+  --payday:#a9e07a;--stop:#ffe27a;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#231d14;--ink:#f5ead2;--card:#33291b;--line:#55442b;
+  --gain:#2f5a30;--loss:#6a2e2a;--happy:#6b3552;--jump:#2c4b6f;--back:#463a73;--skip:#454545;
+  --again:#6b5d1c;--battle:#7b4a1d;--lucky:#5e2f6b;--item:#1f5a57;--none:#33291b;--payday:#3f6b24;--stop:#7a6414}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Maru Gothic ProN","Yu Gothic","Meiryo",sans-serif;min-height:100vh}
+h1{margin:0;font-size:1.6rem}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:.6em 1.1em;background:var(--accent);color:#fff;font-weight:700;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.2)}
+button:disabled{opacity:.45;cursor:default}
+button.sub{background:var(--card);color:var(--ink);border:2px solid var(--line)}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+.hidden{display:none!important}
+/* setup */
+.setup{max-width:760px;margin:0 auto}
+.title{text-align:center;margin:10px 0 18px}
+.title small{display:block;opacity:.7;margin-top:4px}
+.panel{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:14px}
+.panel h2{margin:0 0 8px;font-size:1.05rem}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{background:var(--card);color:var(--ink);border:2px solid var(--line);box-shadow:none;min-width:52px}
+.seg button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.seg button:disabled{opacity:.3}
+.names{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.names div{display:flex;align-items:center;gap:6px;font-size:.9rem}
+.names input{width:100%;padding:.4em;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.dot{width:18px;height:18px;border-radius:50%;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.courses{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.course{border:3px solid var(--line);border-radius:14px;padding:10px;background:var(--bg);cursor:pointer;text-align:left}
+.course.on{border-color:var(--accent);background:var(--card);box-shadow:0 0 0 3px rgba(255,122,61,.3)}
+.course b{font-size:1.05rem}
+.course p{margin:4px 0;font-size:.85rem;opacity:.85}
+.course .meta{font-size:.78rem;opacity:.7}
+.start{width:100%;font-size:1.3rem;padding:.8em}
+/* game */
+.game{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start}
+@media(max-width:900px){.game{grid-template-columns:1fr}}
+.boardwrap{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:8px;position:relative}
+.board{display:grid;gap:3px}
+.tile{position:relative;aspect-ratio:1/1;border-radius:8px;border:1px solid rgba(0,0,0,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(.9rem,2.2vw,1.5rem);line-height:1;background:var(--none)}
+.tile .lb{font-size:clamp(.45rem,1vw,.65rem);margin-top:2px;font-weight:700;opacity:.85}
+.tile .no{position:absolute;top:1px;left:3px;font-size:.5rem;opacity:.5}
+.tile .tk{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:1px;padding:2px;pointer-events:none}
+.tk i{width:clamp(16px,3vw,26px);height:clamp(16px,3vw,26px);border-radius:50%;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5);font-style:normal;font-size:clamp(.6rem,1.6vw,.95rem);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.tk i.cur{animation:bob .7s infinite alternate}
+@keyframes bob{to{transform:translateY(-5px)}}
+.t-gain{background:var(--gain)}.t-loss{background:var(--loss)}.t-happy{background:var(--happy)}
+.t-disaster{background:var(--disaster);color:#fff}.t-jump{background:var(--jump)}.t-back{background:var(--back)}
+.t-skip{background:var(--skip)}.t-again{background:var(--again)}.t-battle{background:var(--battle)}
+.t-lucky{background:var(--lucky)}.t-item{background:var(--item)}.t-payday{background:var(--payday)}
+.t-job,.t-marry,.t-baby,.t-start,.t-goal,.t-school,.t-house{background:var(--stop);border:2px solid var(--accent)}
+.side{display:flex;flex-direction:column;gap:10px}
+.pl{border:3px solid var(--line);border-radius:14px;background:var(--card);padding:8px 10px;font-size:.85rem}
+.pl.cur{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,122,61,.3)}
+.pl .nm{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.95rem}
+.pl .st{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;margin-top:4px}
+.peg{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:3px;border:1px solid #fff;vertical-align:middle}.peg.kid{background:#4aa8ff}
+.pl.done{opacity:.6}
+.ctrl{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:12px;text-align:center}
+.dice{font-size:2.2rem;font-weight:900;line-height:1;margin:6px 0 8px;min-height:2.2rem}
+.wheelbox{position:relative;width:170px;height:182px;margin:0 auto}
+.ptr{position:absolute;top:-2px;left:50%;transform:translateX(-50%);font-size:1.6rem;color:#d6322f;z-index:2;text-shadow:0 1px 0 #fff}
+.wheel{position:absolute;left:10px;top:20px;width:150px;height:150px;border-radius:50%;border:5px solid #fff;box-shadow:0 0 0 3px #b8860b,0 4px 10px rgba(0,0,0,.35);
+ background:conic-gradient(#ff6b6b 0 36deg,#ffd166 0 72deg,#06d6a0 0 108deg,#4dabf7 0 144deg,#b197fc 0 180deg,#ff6b6b 0 216deg,#ffd166 0 252deg,#06d6a0 0 288deg,#4dabf7 0 324deg,#b197fc 0 360deg)}
+.wheel span{position:absolute;left:calc(50% - 11px);top:calc(50% - 11px);width:22px;height:22px;text-align:center;font-weight:900;color:#fff;text-shadow:0 1px 2px #000;font-size:.95rem}
+.wheel::after{content:'';position:absolute;left:calc(50% - 9px);top:calc(50% - 9px);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #b8860b}
+.ctrl .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.turn{font-weight:700;margin-bottom:6px}
+.log{background:var(--card);border:2px solid var(--line);border-radius:12px;padding:8px;height:150px;overflow:auto;font-size:.8rem}
+.log div{padding:1px 0;border-bottom:1px dotted var(--line)}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.banner{background:var(--accent);color:#fff;border-radius:10px;padding:6px 10px;font-weight:700;text-align:center;margin-bottom:8px}
+/* card overlay */
+.card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;background:var(--card);border:4px solid var(--accent);border-radius:18px;padding:16px 22px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.35);min-width:230px;max-width:90%;animation:pop .25s}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.6);opacity:0}}
+.card .ic{font-size:2.6rem}.card .tx{font-weight:700;margin:4px 0}.card .sb{font-size:1.1rem;font-weight:700}
+.plus{color:#1b9a3a}.minus{color:#d6322f}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.modal .box{background:var(--card);border-radius:18px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
+.modal .opts{display:grid;gap:8px;margin-top:10px}
+.rank{display:grid;grid-template-columns:2.2em 1fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px dotted var(--line)}
+.rank small{display:block;opacity:.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- セットアップ -->
+<div id="setup" class="setup">
+  <div class="title"><h1>🎲 じんせい双六 🎲</h1><small>進学・就職・結婚・マイホーム…ルーレットをまわして人生を駆け抜けろ!</small></div>
+  <div class="panel">
+    <h2>👤 あそぶ人(1〜4人)</h2>
+    <div class="seg" id="segHuman"></div>
+    <h2 style="margin-top:12px">🤖 オート対戦のCPU(0〜3人・合計4人まで)</h2>
+    <div class="seg" id="segCpu"></div>
+    <div class="names" id="names"></div>
+  </div>
+  <div class="panel">
+    <h2>🗺 コースをえらぶ</h2>
+    <div class="courses" id="courses"></div>
+  </div>
+  <div class="panel">
+    <h2>⚙ せってい</h2>
+    <div class="seg" id="segSpeed"></div>
+    <div style="margin-top:8px"><label><input type="checkbox" id="snd" checked> 効果音</label></div>
+  </div>
+  <button class="start" id="startBtn">🚩 スタート!</button>
+  <div class="panel" style="margin-top:14px;font-size:.85rem">
+    <b>あそびかた</b><br>
+    🎡ルーレット(1〜10)をまわして車を進め、<b>老後(ゴール)</b>をめざそう。<b>進学・就職・結婚・出産・家購入</b>のマスでは必ず止まります。結婚で車にペグが乗り、子どもが生まれるとペグが増えます。<br>
+    最終精算 = お金 + 家の売却額(土地の値動きあり) + 子ども×40 + 人生カード×30 + しあわせ×5 + 到着ボーナス(1位300/2位150/3位80/4位30)。<br>
+    誰かが老後に到着すると<b>残りのプレイヤーはあと3ターン</b>!🎁アイテム:🎡ベストスピン(2回まわして大きい方)、🛡シールド(マイナスを1回防ぐ)
+    <div id="best" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- ゲーム -->
+<div id="game" class="hidden">
+  <div class="topbar">
+    <b id="courseName"></b>
+    <div><button class="sub" id="legendBtn">マスの見方</button> <button class="sub" id="quitBtn">タイトルへ</button></div>
+  </div>
+  <div class="game">
+    <div class="boardwrap">
+      <div class="board" id="board"></div>
+      <div class="card hidden" id="card"></div>
+    </div>
+    <div class="side">
+      <div class="ctrl">
+        <div id="banner" class="banner hidden"></div>
+        <div class="turn" id="turn"></div>
+        <div class="wheelbox"><div class="ptr">▼</div><div class="wheel" id="wheel"></div></div><div class="dice" id="dice">🎡</div>
+        <div class="row">
+          <button id="rollBtn">🎡 ルーレットをまわす</button>
+          <button id="dblBtn" class="sub hidden">🎡🎡 ベストスピン</button>
+        </div>
+      </div>
+      <div id="players" class="side"></div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+</div>
+</div>
+<div id="modal" class="modal hidden"><div class="box" id="modalBox"></div></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const COLORS=['#e63946','#2a7de1','#2fa84f','#f0a020'];
+const FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];
+
+/* ---------- データ ---------- */
+const TILE={
+  start:['🚩','スタート'],goal:['🏖','老後'],school:['🎓','進学'],house:['🏠','家購入'],job:['💼','就職'],marry:['💒','結婚'],baby:['👶','出産'],
+  payday:['💴','給料日'],gain:['💰',''],loss:['💸',''],happy:['🃏','人生'],disaster:['⚡',''],jump:['⏩',''],
+  back:['⏪',''],skip:['💤',''],again:['🎲',''],battle:['⚔️',''],lucky:['🎰',''],item:['🎁',''],none:['',''],
+};
+const LEGEND={gain:'臨時収入',loss:'出費',happy:'人生カード',disaster:'大災難',jump:'ジャンプ',back:'もどる',skip:'一回休み',again:'もう一回',battle:'バトル',lucky:'ルーレット',item:'アイテム',payday:'給料日'};
+const COURSES=[
+ {id:'calm',emoji:'🌤',name:'のんびり平穏コース',desc:'いい事が多めで安心。はじめての人におすすめ。',len:56,scale:.7,pay:1,
+  w:{gain:4,loss:1,happy:5,disaster:0,jump:2,back:0,skip:1,again:2,battle:1,lucky:1,item:2,none:5}},
+ {id:'wild',emoji:'🌪',name:'波瀾万丈コース',desc:'天国と地獄が交互にやってくる!逆転につぐ逆転のスタンダード。',len:76,scale:1.4,pay:1.2,
+  w:{gain:3,loss:3,happy:2,disaster:2,jump:2,back:2,skip:2,again:1,battle:2,lucky:3,item:1,none:1}},
+ {id:'jackpot',emoji:'💎',name:'一攫千金コース',desc:'金額が超ハイリスク。ルーレットとバトルで一発逆転!',len:70,scale:2.5,pay:1.5,
+  w:{gain:4,loss:3,happy:1,disaster:2,jump:1,back:1,skip:1,again:2,battle:3,lucky:5,item:2,none:1}},
+ {id:'black',emoji:'😈',name:'ブラック企業コース',desc:'出費・災難・一回休みの嵐。でも給料は倍!耐えきれるか。',len:70,scale:1.3,pay:2,
+  w:{gain:2,loss:5,happy:1,disaster:3,jump:1,back:3,skip:3,again:1,battle:2,lucky:2,item:1,none:2}},
+ {id:'random',emoji:'🎯',name:'おまかせコース',desc:'上のコースからランダムで決定!',len:0,scale:0,pay:0,w:null},
+];
+const JOBS=[
+ ['公務員','🏛',40,40],['医者','🩺',70,100],['エンジニア','💻',50,75],['YouTuber','📹',0,160],
+ ['農家','🌾',30,55],['社長','👔',10,130],['芸人','🎤',10,110],['先生','🏫',45,55],['パティシエ','🍰',40,65],['プロゲーマー','🎮',20,120],
+];
+const EV={
+ gain:[['宝くじで当選!',300],['フリマで大もうけ',120],['株が値上がり',200],['ボーナスが出た',150],['親戚からお小遣い',80],['副業が大ヒット',250],['拾った財布のお礼をもらう',100]],
+ loss:[['スマホを落として画面バキバキ',-80],['ガチャで爆死',-150],['食べ過ぎで病院へ',-60],['車が故障',-120],['詐欺にあった',-200],['税金の請求が…',-130],['推し活で散財',-100]],
+ happy:[['家族で旅行',-30,12],['友達と花火大会',0,8],['ねこを飼い始めた',-20,10],['温泉でのんびり',-20,8],['趣味が見つかった',0,10],['同窓会で再会',-10,8]],
+ disaster:[['台風で家が大変!',-250,-5],['会社が倒産!',-300,-8],['火事…',-350,-10],['投資で大失敗',-400,0],['借金の保証人に…',-300,-5]],
+ skip:['インフルエンザで寝込む','寝坊して大遅刻','ダイエットで動けない','温泉に長居しすぎた'],
+};
+const SPEEDS=[['ふつう',1],['はやい',.55],['じっくり',1.5],['超高速',.05]];
+
+/* ---------- セットアップ ---------- */
+const S={humans:1,cpus:1,course:'wild',speed:1,names:[]};
+const CPU_NAMES=['CPU太郎','CPU花子','CPUジロー'];
+function seg(el,items,get,set){
+  el.innerHTML='';
+  items.forEach(([label,val,dis])=>{
+    const b=document.createElement('button');b.textContent=label;b.disabled=!!dis;
+    if(get()===val)b.className='on';
+    b.onclick=()=>{set(val);renderSetup();};el.appendChild(b);
+  });
+}
+function renderSetup(){
+  if(S.humans+S.cpus>4)S.cpus=4-S.humans;
+  seg($('#segHuman'),[1,2,3,4].map(n=>[n+'人',n]),()=>S.humans,v=>S.humans=v);
+  seg($('#segCpu'),[0,1,2,3].map(n=>[n?n+'人':'なし',n,S.humans+n>4]),()=>S.cpus,v=>S.cpus=v);
+  seg($('#segSpeed'),SPEEDS.map(([l,v])=>['進行:'+l,v]),()=>S.speed,v=>S.speed=v);
+  const nm=$('#names');nm.innerHTML='';
+  for(let i=0;i<S.humans+S.cpus;i++){
+    const cpu=i>=S.humans;
+    const d=document.createElement('div');
+    d.innerHTML=`<span class="dot" style="background:${COLORS[i]}"></span>`;
+    if(cpu){d.append(CPU_NAMES[i-S.humans]+' 🤖');}
+    else{const inp=document.createElement('input');inp.value=S.names[i]||'プレイヤー'+(i+1);inp.maxLength=8;
+      inp.oninput=()=>S.names[i]=inp.value;S.names[i]=inp.value;d.appendChild(inp);}
+    nm.appendChild(d);
+  }
+  const cs=$('#courses');cs.innerHTML='';
+  COURSES.forEach(c=>{
+    const d=document.createElement('div');d.className='course'+(S.course===c.id?' on':'');
+    d.innerHTML=`<b>${c.emoji} ${c.name}</b><p>${c.desc}</p><div class="meta">${c.len?c.len+'マス':'???マス'}</div>`;
+    d.onclick=()=>{S.course=c.id;renderSetup();};cs.appendChild(d);
+  });
+  let best='';
+  try{const b=JSON.parse(localStorage.getItem('sugoroku-best')||'{}');
+    best=COURSES.filter(c=>b[c.id]!=null).map(c=>`${c.emoji}${b[c.id]}`).join(' / ');}catch(e){}
+  $('#best').textContent=best?'🏆 自己ベスト: '+best:'';
+}
+buildWheel();
+renderSetup();
+
+/* ---------- 音 ---------- */
+let AC=null;
+function beep(f=600,d=.08,type='square',v=.05){
+  if(!$('#snd').checked)return;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.value=v;
+    o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d);}catch(e){}
+}
+const jingle=(arr)=>arr.forEach((f,i)=>setTimeout(()=>beep(f,.12,'triangle',.07),i*110));
+
+/* ---------- ゲーム状態 ---------- */
+let G=null;
+const sleep=ms=>new Promise((res,rej)=>{const id=G&&G.gid;setTimeout(()=>{G&&G.gid===id?res():rej('abort')},ms*S.speed)});
+const sleepRaw=ms=>new Promise(r=>setTimeout(r,ms));
+const sc=v=>Math.round(v*G.course.scale/5)*5;
+const salary=p=>p.job?Math.round(rnd(p.job[2],p.job[3])*G.course.pay*(p.college?1.25:1)/5)*5:15;
+const STOPS=['school','job','marry','baby','house'];
+const fmt=n=>(n<0?'-':'')+Math.abs(n)+'万円';
+
+function genBoard(c){
+  const n=c.len,t=new Array(n).fill(null);
+  t[0]='start';t[n-1]='goal';
+  t[Math.round(n*.06)]='school';t[Math.round(n*.2)]='job';t[Math.round(n*.38)]='marry';t[Math.round(n*.52)]='house';t[Math.round(n*.68)]='baby';
+  for(let i=8;i<n-2;i+=8)if(!t[i])t[i]='payday';
+  const bag=[];for(const k in c.w)for(let j=0;j<c.w[k];j++)bag.push(k);
+  for(let i=1;i<n-1;i++){
+    if(t[i])continue;
+    let k,tries=0;
+    do{k=pick(bag);tries++;}while(tries<10&&(t[i-1]===k||t[i-2]===k)&&k!=='none');
+    t[i]=k;
+  }
+  return t;
+}
+
+function startGame(){
+  let course=COURSES.find(c=>c.id===S.course);
+  if(!course.len)course=pick(COURSES.filter(c=>c.len));
+  const total=S.humans+S.cpus;
+  const players=[];
+  for(let i=0;i<total;i++){
+    const cpu=i>=S.humans;
+    players.push({id:i,name:cpu?CPU_NAMES[i-S.humans]:(S.names[i]||'プレイヤー'+(i+1)),cpu,color:COLORS[i],
+      pos:0,money:300,happy:0,college:false,house:null,houseFinal:0,cards:0,job:null,spouse:false,kids:0,items:{dice2:0,shield:0},skip:0,done:false,
+      goalRank:0,bonus:0,timeover:false,flags:{school:false,job:false,marry:false,baby:false,house:false},last:3});
+  }
+  const gid=(G?G.gid:0)+1;
+  const cols=window.innerWidth<600?6:10;
+  G={gid,course,board:genBoard(course),players,turn:0,extra:false,finish:[],firstGoal:false,cols,rollResolve:null,rollMode:1,round:1};
+  $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
+  $('#courseName').textContent=`${course.emoji} ${course.name}`;
+  $('#banner').classList.add('hidden');$('#log').innerHTML='';
+  buildBoard();renderPlayers();
+  log(`${course.emoji}${course.name} スタート!`);
+  mainLoop().catch(e=>{if(e!=='abort')console.error(e)});
+}
+
+function buildBoard(){
+  const b=$('#board');b.innerHTML='';
+  const C=G.cols;b.style.gridTemplateColumns=`repeat(${C},1fr)`;
+  G.board.forEach((type,i)=>{
+    const row=Math.floor(i/C);let col=i%C;if(row%2)col=C-1-col;
+    const d=document.createElement('div');d.className='tile t-'+type;
+    d.style.gridRow=row+1;d.style.gridColumn=col+1;
+    const [em,lb]=TILE[type];
+    d.innerHTML=`<span class="no">${i}</span>${em}<span class="lb">${lb}</span><div class="tk"></div>`;
+    d.id='tile'+i;b.appendChild(d);
+  });
+  renderTokens();
+}
+function renderTokens(){
+  document.querySelectorAll('.tk').forEach(e=>e.innerHTML='');
+  G.players.forEach(p=>{
+    const t=document.querySelector(`#tile${p.pos} .tk`);if(!t)return;
+    const i=document.createElement('i');i.style.background=p.color;i.textContent='🚗';i.title=p.name;
+    if(p.id===G.turn&&!p.done)i.className='cur';t.appendChild(i);
+  });
+}
+function renderPlayers(){
+  const box=$('#players');box.innerHTML='';
+  G.players.forEach(p=>{
+    const d=document.createElement('div');d.className='pl'+(p.id===G.turn&&!p.done?' cur':'')+(p.done?' done':'');
+    const job=p.job?`${p.job[1]}${p.job[0]}`:'無職';
+    d.innerHTML=`<div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${p.cpu?' 🤖':''}${p.goalRank?` 🏁${p.goalRank}位`:p.timeover?' ⌛':''}</div>
+    <div class="st"><span>💰 ${fmt(p.money)}</span><span>😊 ${p.happy}</span>
+    <span>${job}</span><span>🚗${p.spouse?`<b class="peg" style="background:${p.color}"></b>`:''}${'<b class="peg kid"></b>'.repeat(Math.min(p.kids,6))}</span>
+    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}</span><span>📍${p.pos}/${G.board.length-1}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span></div>`;
+    box.appendChild(d);
+  });
+}
+function log(t){const l=$('#log');const d=document.createElement('div');d.textContent=t;l.appendChild(d);l.scrollTop=l.scrollHeight}
+async function showCard(icon,text,sub='',cls=''){
+  const c=$('#card');c.innerHTML=`<div class="ic">${icon}</div><div class="tx">${text}</div><div class="sb ${cls}">${sub}</div>`;
+  c.classList.remove('hidden');await sleep(1500);c.classList.add('hidden');
+}
+function modal(html,buttons){
+  return new Promise(res=>{
+    const m=$('#modal'),box=$('#modalBox');
+    box.innerHTML=html+'<div class="opts"></div>';
+    const o=box.querySelector('.opts');
+    buttons.forEach((b,i)=>{const e=document.createElement('button');e.innerHTML=b;e.onclick=()=>{m.classList.add('hidden');res(i)};o.appendChild(e)});
+    m.classList.remove('hidden');
+  });
+}
+
+/* ---------- お金などの操作 ---------- */
+function gainMoney(p,v){p.money+=v}
+function loseMoney(p,v){ // v>0
+  if(p.items.shield>0){p.items.shield--;log(`🛡 ${p.name}はシールドで${fmt(-v)}を防いだ!`);return 0}
+  p.money-=v;return v;
+}
+function deltaText(m,h){
+  const a=[];if(m)a.push(`<span class="${m>0?'plus':'minus'}">${m>0?'+':''}${m}万円</span>`);
+  if(h)a.push(`<span class="${h>0?'plus':'minus'}">😊${h>0?'+':''}${h}</span>`);return a.join(' ');
+}
+async function movePlain(p,to){
+  to=Math.max(0,Math.min(G.board.length-2,to));
+  while(p.pos!==to){p.pos+=p.pos<to?1:-1;renderTokens();beep(500+p.pos*8,.05);await sleep(130)}
+  renderPlayers();
+}
+
+/* ---------- メインループ ---------- */
+async function mainLoop(){
+  while(G.players.some(p=>!p.done)){
+    const p=G.players[G.turn];
+    if(p.done){nextTurn();continue}
+    renderPlayers();renderTokens();
+    $('#turn').innerHTML=`<span class="dot" style="display:inline-block;background:${p.color}"></span> ${p.name}の番 (${G.round}周目)`;
+    if(p.skip>0){
+      p.skip--;log(`💤 ${p.name}はお休み`);await showCard('💤',`${p.name}は一回休み`);
+    }else{
+      await playTurn(p);
+    }
+    if(G.firstGoal&&!p.done){
+      p.last--;
+      if(p.last<=0){p.done=true;p.timeover=true;log(`⌛ ${p.name}は時間切れ…`)}
+      else if(p.last===1)log(`⏰ ${p.name}はラスト1ターン!`);
+    }
+    if(!(G.extra&&!p.done))nextTurn();
+    G.extra=false;
+  }
+  await finishGame();
+}
+function nextTurn(){
+  let n=0;
+  do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0)G.round++;n++}while(G.players[G.turn].done&&n<10);
+}
+
+function waitRoll(p){
+  const rb=$('#rollBtn'),db=$('#dblBtn');
+  rb.disabled=false;rb.textContent='🎡 ルーレットをまわす';
+  db.classList.toggle('hidden',p.items.dice2<=0);
+  return new Promise(res=>{
+    G.rollResolve=res;
+    rb.onclick=()=>{rb.disabled=true;db.classList.add('hidden');res(1)};
+    db.onclick=()=>{rb.disabled=true;db.classList.add('hidden');res(2)};
+  });
+}
+
+let wheelRot=0;
+function buildWheel(){
+  const w=$('#wheel');w.innerHTML='';
+  for(let i=1;i<=10;i++){const e=document.createElement('span');e.textContent=i;e.style.transform=`rotate(${(i-.5)*36}deg) translateY(-54px)`;w.appendChild(e)}
+}
+async function rollDice(n){
+  const d=$('#dice'),w=$('#wheel');const vals=[];
+  for(let k=0;k<n;k++){
+    const v=rnd(1,10);vals.push(v);d.textContent='…';
+    wheelRot=Math.ceil(wheelRot/360)*360+360*4+((360-(v-.5)*36)%360);
+    w.style.transition=`transform ${1.5*S.speed}s cubic-bezier(.15,.7,.2,1)`;w.style.transform=`rotate(${wheelRot}deg)`;
+    for(let i=0;i<8;i++){beep(300+i*50,.04);await sleep(180)}
+    await sleep(200);d.textContent=v;jingle([784]);await sleep(300);
+  }
+  return vals;
+}
+
+async function playTurn(p){
+  const rb=$('#rollBtn'),db=$('#dblBtn');
+  let mode=1;
+  if(p.cpu){
+    rb.disabled=true;rb.textContent='🤖 考え中…';db.classList.add('hidden');
+    await sleep(700);
+    if(p.items.dice2>0&&Math.random()<.5)mode=2;
+  }else{
+    mode=await waitRoll(p);
+    if(G.gid===undefined)return;
+  }
+  if(mode===2)p.items.dice2--;
+  const vals=await rollDice(mode);
+  const total=Math.max(...vals);
+  $('#dice').textContent=total;
+  log(`🎡 ${p.name}は${vals.join(' と ')}${mode===2?' → '+total+'を採用':''}!`);
+  await sleep(350);
+  // 移動
+    for(let s=0;s<total;s++){
+    p.pos++;renderTokens();beep(500+p.pos*8,.05);await sleep(150);
+    const t=G.board[p.pos];
+    if(p.pos>=G.board.length-1){await reachGoal(p);return}
+    if(t==='payday'){
+      const j=p.job;const sal=salary(p);
+      gainMoney(p,sal);renderPlayers();jingle([660,880]);
+      log(`💴 ${p.name}は給料日! +${sal}万円${j?'':'(無職のバイト代)'}`);
+      if(s<total-1)await showCardQuick('💴',`給料日! +${sal}万円`);
+    }
+    if(STOPS.includes(t)&&!p.flags[t])break;
+  }
+  renderPlayers();
+  await resolveTile(p,G.board[p.pos]);
+}
+async function showCardQuick(icon,text){
+  const c=$('#card');c.innerHTML=`<div class="ic">${icon}</div><div class="tx">${text}</div>`;
+  c.classList.remove('hidden');await sleep(550);c.classList.add('hidden');
+}
+
+async function reachGoal(p){
+  p.done=true;G.finish.push(p);p.goalRank=G.finish.length;
+  p.bonus=[300,150,80,30][p.goalRank-1]||0;p.money+=0;
+  jingle([523,659,784,1047]);
+  log(`🏖 ${p.name}が老後へ到着! ${p.goalRank}位 (ボーナス${p.bonus}点)`);
+  if(!G.firstGoal){
+    G.firstGoal=true;
+    G.players.forEach(q=>{if(!q.done)q.last=3});
+    const b=$('#banner');b.textContent='⏰ 誰かが老後に到着!残りの人はあと3ターン!';b.classList.remove('hidden');
+  }
+  renderPlayers();renderTokens();
+  await showCard('🏖',`${p.name}は老後の世界へ!`,`${p.goalRank}位 ボーナス +${p.bonus}`,'plus');
+}
+
+/* ---------- マスの効果 ---------- */
+function giveItem(p,kind){
+  kind=kind||pick(['dice2','shield']);p.items[kind]++;
+  return kind==='dice2'?'🎡ベストスピン':'🛡シールド';
+}
+async function resolveTile(p,t){
+  switch(t){
+    case 'start':case 'none':case 'payday':break;
+    case 'school':{
+      if(p.flags.school)break;p.flags.school=true;
+      const fee=sc(150);let go;
+      if(p.cpu)go=p.money>=fee+100;
+      else go=(await modal(`<h2>🎓 ${p.name}の進路</h2><div>大学に行くと学費がかかるけど、就ける職業と給料がアップ(給料×1.25)!</div>`,[`🎓 大学に進学 (-${fee}万円)`,'💼 すぐ就職をめざす']))===0;
+      if(go){p.college=true;p.money-=fee;p.happy+=5;log(`🎓 ${p.name}は大学へ進学`);await showCard('🎓',`${p.name}は大学へ!`,deltaText(-fee,5))}
+      else{log(`💼 ${p.name}は高卒で就職をめざす`);await showCard('💼',`${p.name}は社会へ飛び出す!`)}
+      break;
+    }
+    case 'house':{
+      if(p.flags.house)break;p.flags.house=true;
+      const hs=[['🏢マンション',sc(200),1.35],['🏡一戸建て',sc(400),1.4],['🏰大豪邸',sc(700),1.6]];
+      let h;
+      if(p.cpu){const ok=hs.filter(x=>p.money>=x[1]+80);h=ok.length?ok[ok.length-1]:null;if(h&&Math.random()<.2)h=null}
+      else{const i=await modal(`<h2>🏠 ${p.name}、お家を買いますか?</h2><div>ゴール時に土地の値動きで売値が変わります(0.7〜1.8倍!)</div>`,[...hs.map(x=>`${x[0]} ${x[1]}万円`),'買わない']);h=hs[i]||null}
+      if(h){p.house=h;p.money-=h[1];p.happy+=8;jingle([523,784]);log(`🏠 ${p.name}は${h[0]}を購入`);await showCard('🏠',`${h[0]}を購入!`,deltaText(-h[1],8))}
+      else{log(`🏠 ${p.name}は家を買わなかった`);await showCard('🏠','賃貸暮らしを選んだ')}
+      break;
+    }
+    case 'job':{
+      if(p.flags.job)break;p.flags.job=true;
+      const pool=JOBS.filter(j=>p.college||!['医者','エンジニア','先生','社長'].includes(j[0]));
+      const opts=[...pool].sort(()=>Math.random()-.5).slice(0,3);
+      let ch;
+      if(p.cpu){ch=opts.reduce((a,b)=>(a[2]+a[3])>=(b[2]+b[3])?a:b);await showCard('💼',`${p.name}は ${ch[1]}${ch[0]} に就職!`);}
+      else{
+        const i=await modal(`<h2>💼 ${p.name}の就職先をえらぼう</h2><div>給料日にもらえる金額が変わります</div>`,
+          opts.map(o=>`${o[1]} ${o[0]}<br><small>給料 ${Math.round(o[2]*G.course.pay*(p.college?1.25:1))}〜${Math.round(o[3]*G.course.pay*(p.college?1.25:1))}万円${o[2]!==o[3]?'(ブレあり)':''}</small>`));
+        ch=opts[i];
+      }
+      p.job=ch;p.happy+=5;log(`💼 ${p.name}は${ch[0]}になった`);jingle([523,659,784]);break;
+    }
+    case 'marry':{
+      if(p.flags.marry)break;p.flags.marry=true;p.spouse=true;
+      const m=sc(150)-sc(100);gainMoney(p,m);p.happy+=15;
+      log(`💒 ${p.name}は結婚!`);jingle([659,784,988,1319]);
+      await showCard('💒',`${p.name}、ご結婚おめでとう!`,deltaText(m,15));break;
+    }
+    case 'baby':{
+      if(p.flags.baby)break;p.flags.baby=true;
+      const tw=Math.random()<.12?2:1;p.kids+=tw;
+      const m=-sc(50)*tw;p.money+=m;p.happy+=12*tw;
+      log(`👶 ${p.name}に赤ちゃん${tw===2?'(双子!)':''}`);jingle([784,988,1175]);
+      await showCard('👶',tw===2?'双子が生まれた!':'赤ちゃん誕生!',deltaText(m,12*tw));break;
+    }
+    case 'gain':{
+      const e=pick(EV.gain),m=sc(e[1]);gainMoney(p,m);beep(880,.15,'triangle');
+      log(`💰 ${p.name}: ${e[0]} ${fmt(m)}`);await showCard('💰',e[0],deltaText(m,0));break;
+    }
+    case 'loss':{
+      const e=pick(EV.loss),m=sc(-e[1]);const l=loseMoney(p,m);beep(180,.2,'sawtooth');
+      log(`💸 ${p.name}: ${e[0]} ${l?fmt(-l):'(防いだ)'}`);await showCard('💸',e[0],l?deltaText(-l,0):'🛡 シールドで防いだ!');break;
+    }
+    case 'happy':{
+      const e=pick(EV.happy),m=sc(-e[1]);p.happy+=e[2];p.cards++;if(m)p.money-=m;
+      log(`🃏 ${p.name}: 人生カード「${e[0]}」`);jingle([660,784]);await showCard('🃏','人生カード: '+e[0],deltaText(-m,e[2]));break;
+    }
+    case 'disaster':{
+      const e=pick(EV.disaster),m=sc(-e[1]);const l=loseMoney(p,m);p.happy+=e[2];beep(120,.4,'sawtooth',.08);
+      log(`⚡ ${p.name}: ${e[0]} ${l?fmt(-l):'(防いだ)'}`);
+      await showCard('⚡',e[0],(l?deltaText(-l,e[2]):'🛡 お金は守った!'+deltaText(0,e[2])));break;
+    }
+    case 'jump':{
+      const n=rnd(3,5);log(`⏩ ${p.name}は${n}マスジャンプ!`);await showCard('⏩',`ジャンプ! ${n}マス進む`);
+      const before=p.pos;await movePlain(p,p.pos+n);
+      await passPaydays(p,before,p.pos);break;
+    }
+    case 'back':{
+      const n=rnd(2,4);log(`⏪ ${p.name}は${n}マスもどる`);await showCard('⏪',`もどされた… ${n}マス戻る`);
+      await movePlain(p,p.pos-n);break;
+    }
+    case 'skip':{
+      const e=pick(EV.skip);p.skip=1;log(`💤 ${p.name}: ${e}`);await showCard('💤',e,'次回 一回休み');break;
+    }
+    case 'again':{
+      G.extra=true;log(`🎲 ${p.name}はもう一回!`);jingle([784,1047]);await showCard('🎲','もう一回ルーレットをまわせる!');break;
+    }
+    case 'item':{
+      const k=giveItem(p);log(`🎁 ${p.name}は${k}をゲット`);jingle([880,1175]);await showCard('🎁',`${k} をゲット!`);break;
+    }
+    case 'battle':await battle(p);break;
+    case 'lucky':await roulette(p);break;
+  }
+  renderPlayers();renderTokens();
+}
+async function passPaydays(p,a,b){
+  for(let i=a+1;i<=b;i++)if(G.board[i]==='payday'&&p.job){
+    const sal=salary(p);gainMoney(p,sal);log(`💴 ${p.name}は給料日を通過 +${sal}万円`);
+  }
+}
+
+async function battle(p){
+  const others=G.players.filter(q=>q!==p&&!q.done);
+  const foe=others.length?pick(others):{name:'謎のライバル',npc:true,items:{shield:0}};
+  let a,b;
+  do{a=rnd(1,6);b=rnd(1,6)}while(false);
+  await showCard('⚔️',`${p.name} VS ${foe.name}`,`${FACES[a-1]} 対 ${FACES[b-1]}`);
+  const amt=sc(80);
+  if(a===b){log(`⚔️ ${p.name} vs ${foe.name}: 引き分け`);await showCard('🤝','引き分け!');return}
+  const win=a>b?p:foe,lose=a>b?foe:p;
+  let got=amt;
+  if(!lose.npc){got=loseMoney(lose,amt)}
+  if(!win.npc){win.money+=got||0}
+  log(`⚔️ ${win.name}の勝ち! ${got?'+'+got+'万円':'(シールドで防御)'}`);
+  jingle(a>b?[659,880]:[300,200]);
+  await showCard(a>b?'🏆':'😵',`${win.name}の勝ち!`,got?deltaText(win===p?got:-got,0):'🛡 防御された');
+}
+
+async function roulette(p){
+  const outs=[
+    ['💰 +300万円',async()=>{gainMoney(p,sc(300))}],
+    ['💸 -200万円',async()=>{loseMoney(p,sc(200))}],
+    ['😊 しあわせ +25',async()=>{p.happy+=25}],
+    ['😭 しあわせ -15',async()=>{p.happy-=15}],
+    ['⏩ 5マス進む',async()=>{const b=p.pos;await movePlain(p,p.pos+5);await passPaydays(p,b,p.pos)}],
+    ['⏪ 8マス戻る',async()=>{await movePlain(p,p.pos-8)}],
+    ['🎁 アイテムゲット',async()=>{giveItem(p)}],
+    ['🎲 もう一回!',async()=>{G.extra=true}],
+    ['🤝 みんなから50万円',async()=>{G.players.forEach(q=>{if(q!==p){const l=loseMoney(q,sc(50));p.money+=l||0}})}],
+    ['🌀 全員とお金を入れ替え?!(最下位と交換)',async()=>{
+      const o=G.players.filter(q=>q!==p).sort((x,y)=>x.money-y.money)[0];
+      if(o){[p.money,o.money]=[o.money,p.money]}}],
+  ];
+  const pk=pick(outs);
+  const c=$('#card');c.classList.remove('hidden');
+  for(let i=0;i<12;i++){c.innerHTML=`<div class="ic">🎰</div><div class="tx">${pick(outs)[0]}</div>`;beep(400+i*30,.05);await sleep(90+i*12)}
+  c.innerHTML=`<div class="ic">🎰</div><div class="tx">${pk[0]}</div><div class="sb">けってい!</div>`;
+  jingle([784,988,1175]);await sleep(1000);c.classList.add('hidden');
+  log(`🎰 ${p.name}のルーレット: ${pk[0]}`);
+  await pk[1]();
+}
+
+/* ---------- 結果 ---------- */
+function score(p){return p.money+p.happy*5+p.bonus+p.houseFinal+p.cards*30+p.kids*40}
+const TITLES=['人生の大勝ち組 👑','堂々たる成功者 🌟','そこそこ幸せ 😊','苦労人 💪','波瀾万丈すぎた人生 🌪'];
+async function finishGame(){
+  $('#rollBtn').disabled=true;$('#dblBtn').classList.add('hidden');
+  await sleepRaw(600);
+  G.players.forEach(p=>{p.houseFinal=p.house?Math.round(p.house[1]*(0.7+Math.random()*1.1)/5)*5:0});
+  const ranked=[...G.players].sort((a,b)=>score(b)-score(a));
+  jingle([523,659,784,1047,784,1047]);
+  let best={};try{best=JSON.parse(localStorage.getItem('sugoroku-best')||'{}')}catch(e){}
+  const top=ranked[0];
+  const newRec=top&&(best[G.course.id]==null||score(top)>best[G.course.id]);
+  if(newRec){best[G.course.id]=score(top);try{localStorage.setItem('sugoroku-best',JSON.stringify(best))}catch(e){}}
+  let html=`<h2>🎊 老後の精算・けっか発表 — ${G.course.emoji}${G.course.name}</h2>`;
+  ranked.forEach((p,i)=>{
+    const job=p.job?`${p.job[1]}${p.job[0]}`:'無職';
+    html+=`<div class="rank"><b>${['🥇','🥈','🥉','4️⃣'][i]}</b>
+    <div><span class="dot" style="display:inline-block;background:${p.color}"></span> ${p.name}${p.cpu?' 🤖':''}
+    <small>${job} / ${p.spouse?'💒':'独身'} / 👶×${p.kids}(+${p.kids*40}) / 💰${fmt(p.money)} / ${p.house?p.house[0]+'売却'+p.houseFinal:'賃貸'} / 🃏×${p.cards}(+${p.cards*30}) / 😊${p.happy} / ${p.goalRank?`🏖${p.goalRank}位(+${p.bonus})`:'⌛未到着'}</small></div>
+    <b>${score(p)}点</b></div>`;
+  });
+  const sc0=score(top);
+  html+=`<p style="margin:10px 0 0">👑 ${top.name} の称号: <b>${TITLES[sc0>=1200?0:sc0>=800?1:sc0>=500?2:sc0>=250?3:4]}</b>${newRec?' 🏆自己ベスト更新!':''}</p>`;
+  const i=await modal(html,['🔁 もう一度(同じ設定)','⚙ 設定にもどる']);
+  if(i===0)startGame();else toTitle();
+}
+function toTitle(){
+  if(G)G.gid++;
+  $('#game').classList.add('hidden');$('#setup').classList.remove('hidden');$('#modal').classList.add('hidden');
+  $('#card').classList.add('hidden');renderSetup();
+}
+
+$('#startBtn').onclick=()=>{beep(660,.1);startGame()};
+$('#quitBtn').onclick=async()=>{
+  const i=await modal('<h2>タイトルにもどりますか?</h2>',['もどる','つづける']);
+  if(i===0)toTitle();
+};
+$('#legendBtn').onclick=()=>{
+  let h='<h2>マスの見方</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  for(const k in LEGEND)h+=`<div class="tile t-${k}" style="aspect-ratio:auto;flex-direction:row;gap:6px;padding:6px;justify-content:flex-start"><span>${TILE[k][0]}</span><span style="font-size:.8rem">${LEGEND[k]}</span></div>`;
+  h+='</div><p style="font-size:.85rem">🎓進学・💼就職・💒結婚・🏠家購入・👶出産は必ず止まるマス!</p>';
+  modal(h,['とじる']);
+};
+</script>
+</body>
+</html>
