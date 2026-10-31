@@ -998,26 +998,21 @@ function drawQuestion(){
   return ETHICS[ethBag.pop()];
 }
 async function bonusChance(p){
-  const cards=[drawQuestion(),drawQuestion(),drawQuestion()];
+  const [q,opts]=drawQuestion();
   let ch;
-  if(p.cpu)ch=Math.floor(Math.random()*3);
-  else ch=await modal('<h2>🎁 ボーナスチャンス!</h2><div>伏せられた3枚のカードから1枚えらんでね。<br>カードには「人徳の問い」が…!よい行いには、ボーナスが待っているかも?</div>',['🎴 カード①','🎴 カード②','🎴 カード③']);
-  const [q,opts]=cards[ch];
-  let c2;
   if(p.cpu){
     const best=opts.reduce((a,o,i)=>o[2]>opts[a][2]?i:a,0);
-    c2=Math.random()<p.ethic?best:Math.floor(Math.random()*opts.length);
+    ch=Math.random()<p.ethic?best:Math.floor(Math.random()*opts.length);
   }else{
-    c2=await modal('<h2>🧭 人徳の問い</h2><div>'+esc(q)+'</div>',opts.map(o=>esc(o[0])));
+    ch=await modal('<h2>🎁 ボーナスチャンス!</h2><div>'+esc(q)+'</div>',opts.map(o=>esc(o[0])+(o[1]?' <small>('+(o[1]>0?'+':'')+sc(o[1])+'万円)</small>':'')));
   }
-  const o=opts[c2],m=o[2]>0?sc(o[2]*8):(o[1]>0?sc(o[1]):0);
-  if(o[2]>0)p.happy+=2;
+  const o=opts[ch],m=o[1]?sc(o[1]):0;
   if(m)p.money+=m;
   p.virtue+=o[2];
-  log(`🎁 ${p.name}のボーナスチャンス「${o[0]}」${o[2]>0?' ボーナス!':''} 徳${o[2]>0?'+':''}${o[2]}${m?' / +'+m+'万円':''}`);
+  log(`🎁 ${p.name}のボーナスチャンス「${o[0]}」 徳${o[2]>0?'+':''}${o[2]}${m?' / '+(m>0?'+':'')+m+'万円':''}`);
   if(!p.cpu){
     beep(o[2]>=0?880:200,.15,o[2]>=0?'triangle':'sawtooth');
-    await showCard(o[2]>=0?'🌟':'😈',esc(o[0]),`<span class="${o[2]>=0?'plus':'minus'}">${o[2]>0?'🎁ボーナス! ':''}徳 ${o[2]>0?'+':''}${o[2]}</span> ${m?deltaText(m,0):''}`);
+    await showCard(o[2]>=0?'🌟':'😈',esc(o[0]),`<span class="${o[2]>=0?'plus':'minus'}">徳 ${o[2]>0?'+':''}${o[2]}</span> ${m?deltaText(m,0):''}`);
   }
 }
 
