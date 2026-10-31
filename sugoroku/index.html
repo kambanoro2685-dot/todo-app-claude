@@ -272,10 +272,10 @@ function renderSetup(){
   seg($('#segSpeed'),SPEEDS.map(([l,v])=>['進行:'+l,v]),()=>S.speed,v=>S.speed=v);
   seg($('#segYear'),[1960,1970,1980,1990,2000,2010,2020].map(y=>[y+'年',y]),()=>S.startYear,v=>S.startYear=v);
   $('#yearIn').value=S.startYear;
-  seg($('#segMode'),[['📰 時事モード(今日の話題が反映)','news'],['📌 固定モード(番号をえらぶ)','fixed']],()=>S.mode,v=>S.mode=v);
+  seg($('#segMode'),[['📰 時事モード(当時の時事が反映)','news'],['📌 固定モード(番号をえらぶ)','fixed']],()=>S.mode,v=>S.mode=v);
   const no=$('#segNo');no.classList.toggle('hidden',S.mode!=='fixed');
   if(S.mode==='fixed')seg(no,Array.from({length:12},(_,i)=>['No.'+(i+1),i+1]),()=>S.fixedNo,v=>S.fixedNo=v);
-  $('#modeNote').textContent=S.mode==='news'?'スタート時にその日の話題(Wikipedia人気記事)を取得して盤面に反映します。取得できないときは内蔵の話題を使います。':'番号ごとに盤面と話題が固定されます。同じ番号なら何度でも同じ双六を遊べます。';
+  $('#modeNote').textContent=S.mode==='news'?'遊んでいる人の年に合わせて、当時のできごと(Wikipediaの年表)がニュース速報マスや節目の札、画面脇の時事欄に反映されます。取得できないときは内蔵の年表を使います。':'番号ごとに盤面と話題が固定されます。同じ番号なら何度でも同じ双六を遊べます。';
   const nm=$('#names');nm.innerHTML='';
   for(let i=0;i<S.humans+S.cpus;i++){
     const cpu=i>=S.humans;
@@ -371,7 +371,7 @@ function layout(n,rng){
 
 function startGame(){
   const total=S.humans+S.cpus;
-  const seed=S.mode==='fixed'?S.fixedNo*7919+13:hash(todayJST()+'#sugoroku');
+  const seed=S.mode==='fixed'?S.fixedNo*7919+13:hash('era'+S.startYear+'#sugoroku');
   const rng=mulberry32(seed);
   let course=COURSES.find(c=>c.id===S.course);
   if(!course.len){const L=COURSES.filter(c=>c.len);course=L[Math.floor(rng()*L.length)]}
@@ -407,8 +407,11 @@ function startGame(){
 }
 function renderNewsBox(){
   const b=$('#newsBox');
-  if(S.mode==='news'&&NEWS.ok)b.innerHTML=`<b>📰 今日の話題</b> <small>${esc(NEWS.src)}</small><ol style="margin:4px 0 0;padding-left:1.3em">${NEWS.topics.slice(0,8).map(t=>`<li><a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(t)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ol>`;
-  else if(S.mode==='news')b.innerHTML='<b>📰 時事モード</b><br><small>話題を取得できなかったため、内蔵の話題を使っています</small>';
+  if(S.mode==='news'){
+    const y=G&&G.players?yearOf(G.players[G.turn]):S.startYear,l=ERA[y];
+    if(!l){loadEra(y).then(()=>{if(G&&S.mode==='news')renderNewsBox()});b.innerHTML='<b>📰 '+y+'年ごろの時事</b><br><small>取得中…</small>'}
+    else b.innerHTML='<b>📰 '+y+'年ごろの時事</b> <small>(Wikipedia「'+y+'年」より)</small><ol style="margin:4px 0 0;padding-left:1.3em;font-size:.82rem">'+l.slice(0,8).map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>';
+  }
   else b.innerHTML=`<b>📌 固定モード No.${S.fixedNo}</b><br><small>番号が同じなら、毎回同じ盤面・同じ話題です</small>`;
   if(G&&G.stock!=null)b.innerHTML+=stockHtml();
 }
@@ -763,7 +766,7 @@ async function mainLoop(){
   while(G.players.some(p=>!p.done)){
     const p=G.players[G.turn];
     if(p.done){nextTurn();continue}
-    renderPlayers();renderTokens();
+    renderPlayers();renderTokens();if(S.mode==='news')renderNewsBox();
     $('#turn').innerHTML=`<span class="dot" style="display:inline-block;background:${p.color}"></span> ${p.name}の番 (${G.round}周目)`;
     if(p.skip>0){
       p.skip--;log(`💤 ${p.name}はお休み`);await showCard('💤',`${p.name}は一回休み`);
@@ -893,7 +896,9 @@ async function milestone(p,icon,text,years){
   p.age+=years;mark(p,icon,text);
   log(`📅 ${p.name} ${p.age}歳(${yearOf(p)}年) ${icon}${text} ／ 🗞 ${newsOf(yearOf(p))}`);
   renderPlayers();
-  await showCard('📅',`${yearOf(p)}年・${p.age}歳`,`${icon} ${esc(text)}<br><small>🗞 ${esc(newsOf(yearOf(p)))}</small>`);
+  let ex='';
+  if(S.mode==='news'){const l=await loadEra(yearOf(p));ex='<br><small>📰 '+esc(pick(l))+'</small>'}
+  await showCard('📅',`${yearOf(p)}年・${p.age}歳`,`${icon} ${esc(text)}<br><small>🗞 ${esc(newsOf(yearOf(p)))}</small>${ex}`);
   await checkDeath(p);
 }
 async function ageTick(p){p.age+=G.course.tick||3;mark(p,'💴','給料日(働き盛り)');renderPlayers();await checkDeath(p)}
@@ -1055,6 +1060,36 @@ async function bankTile(p,t){
   }
 }
 
+/* ---------- 当時の時事(Wikipediaの年表から取得) ---------- */
+const ERA={};
+const BAD_ERA=/殺|死亡|死去|遺体|自殺|テロ|墜落|爆発|爆弾|虐待|逮捕|AV/;
+async function loadEra(y){
+  if(ERA[y])return ERA[y];
+  let list=[];
+  try{
+    const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),5000);
+    const r=await fetch('https://ja.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=wiki&titles='+encodeURIComponent(y+'年')+'&format=json&origin=*&redirects=1',{signal:ctl.signal});
+    clearTimeout(to);
+    const j=await r.json();
+    const t=(Object.values(j.query.pages)[0].extract)||'';
+    const a=t.indexOf('=== 主な出来事 ==='),b=t.indexOf('=== 1月 ===');
+    const strip=x=>x.replace(/[（(][^）)]*[）)]/g,'').trim();
+    if(a>=0){
+      const sec=t.slice(a+14,b>a?b:a+4000);
+      list=sec.split('\n').map(strip).filter(x=>x.length>=8&&x.length<=70&&/。$/.test(x)&&!/参照|^en:|からd+年|周年/.test(x)&&!BAD_ERA.test(x));
+      const jp=x=>/日本|東京|大阪|阪神|首相|新幹線|JR|円|五輪|ノーベル/.test(x)?1:0;
+      list.sort((p,q)=>jp(q)-jp(p));
+    }
+    if(list.length<4&&b>=0){
+      const m=(t.slice(b).match(/^\d{1,2}月\d{1,2}日 - .+$/gm)||[]).map(x=>strip(x.replace(/^\d{1,2}月\d{1,2}日 - /,'')))
+        .filter(x=>x.length>=8&&x.length<=50&&!BAD_ERA.test(x)&&!/大会|選手権|オープン|カップ|杯|リーグ/.test(x));
+      list=list.concat(m.slice(0,40));
+    }
+  }catch(e){}
+  if(list.length<3)list=[newsOf(y)];
+  ERA[y]=[...new Set(list)].slice(0,40);
+  return ERA[y];
+}
 function nextTurn(){
   let n=0;
   do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0){G.round++;onRound()}n++}while(G.players[G.turn].done&&n<10);
@@ -1248,7 +1283,9 @@ async function resolveTile(p,t){
     case 'bkjob':case 'bkfood':case 'bkdebt':case 'bklot':case 'bkhelp':case 'bkrest':case 'bkpawn':case 'bkexit':await bankTile(p,t);break;
     case 'stock':await stockTile(p);break;
     case 'news':{
-      const raw=G.topicAt[p.pos]||'世の中の動き',tp=esc(raw);
+      let raw=G.topicAt[p.pos]||'世の中の動き';
+      if(S.mode==='news'){const ey=yearOf(p);raw=ey+'年 '+pick(await loadEra(ey))}
+      const tp=esc(raw);
       if(Math.random()<.6){const m=sc(60);gainMoney(p,m);p.happy+=3;log(`📰 ${p.name}: 話題『${raw}』に乗って情報通に! +${m}万円`);jingle([660,880]);await showCard('📰',`ニュース速報『${tp}』`,'話題に乗って情報通に! '+deltaText(m,3))}
       else{const l=loseMoney(p,sc(40));log(`📰 ${p.name}: 『${raw}』のニュースに気をとられて…`);await showCard('📰',`ニュース速報『${tp}』`,l?'見入って散財… '+deltaText(-l,0):'🛡 シールドで防いだ!')}
       break;
@@ -1360,7 +1397,7 @@ function toTitle(){
 
 $('#startBtn').onclick=async()=>{
   beep(660,.1);const b=$('#startBtn');
-  if(S.mode==='news'){b.disabled=true;b.textContent='📰 今日の話題を取得中…';await loadNews();b.disabled=false;b.textContent='🚩 スタート!'}
+  if(S.mode==='news'){b.disabled=true;b.textContent='📰 その年のできごとを取得中…';await loadEra(S.startYear);b.disabled=false;b.textContent='🚩 スタート!'}
   startGame();
 };
 $('#zoomBtn').onclick=()=>{zoomOn=!zoomOn;$('#zoomBtn').textContent=zoomOn?'🔍 全体を見る':'🔎 手番のところを拡大';if(G)focus()};
