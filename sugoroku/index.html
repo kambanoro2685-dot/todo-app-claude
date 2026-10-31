@@ -231,6 +231,14 @@ const COURSES=[
   w:{gain:2,loss:5,happy:1,disaster:3,jump:1,back:3,skip:3,again:1,battle:2,lucky:2,item:1,none:2}},
  {id:'comeback',emoji:'🔥',name:'大逆転コース',desc:'ギャンブルとコツコツ株で一発逆転!最下位ほどギャンブルに勝ちやすい。',len:70,scale:1.5,pay:1.2,risk:1.2,stocks:true,
   w:{gain:2,loss:2,happy:1,disaster:1,jump:1,back:1,skip:1,again:2,battle:2,lucky:2,item:1,none:1,gamble:5,stock:5}},
+ {id:'real',emoji:'🏠',name:'リアル人生コース',desc:'就職・結婚・住宅・子育て・介護・老後…現実の人生にそっくり。出費も病気もリアルに!',len:72,scale:1,pay:1,risk:1,tick:4,stocks:true,
+  w:{gain:3,loss:4,happy:4,disaster:1,jump:0,back:0,skip:2,again:1,battle:0,lucky:0,item:1,none:6,stock:2},
+  ev:{
+   gain:[['ボーナスが出た',120],['昇給した',80],['副業で少し収入',60],['お祝い金をもらった',100],['フリマで不用品が売れた',20],['確定申告で還付金',30],['社内表彰の報奨金',50]],
+   loss:[['車検・車の修理',-60],['家電が壊れて買い替え',-30],['歯の治療',-20],['引っ越し費用',-50],['冠婚葬祭が続く',-40],['税金・保険料の支払い',-70],['飲み会が続いて出費',-15]],
+   happy:[['家族でキャンプ',-10,8],['友人と旅行',-20,8],['子どもの運動会',0,10],['趣味の仲間ができた',0,8],['資格に合格した',-5,10],['久しぶりの同窓会',-10,6]],
+   disaster:[['病気で入院・手術',-120,-6],['会社が経営不振でリストラ',-150,-6],['自然災害で自宅に被害',-180,-8],['親の介護が始まる',-100,-6],['交通事故にあう',-130,-6]],
+   skip:['インフルエンザで寝込む','親の介護で休暇を取る','育児・介護休暇','出張で足止め']}},
  {id:'random',emoji:'🎯',name:'おまかせコース',desc:'上のコースからランダムで決定!',len:0,scale:0,pay:0,w:null},
 ];
 const JOBS=[
@@ -870,7 +878,7 @@ async function milestone(p,icon,text,years){
   await showCard('📅',`${yearOf(p)}年・${p.age}歳`,`${icon} ${esc(text)}<br><small>🗞 ${esc(newsOf(yearOf(p)))}</small>`);
   await checkDeath(p);
 }
-async function ageTick(p){p.age+=3;mark(p,'💴','給料日(働き盛り)');renderPlayers();await checkDeath(p)}
+async function ageTick(p){p.age+=G.course.tick||3;mark(p,'💴','給料日(働き盛り)');renderPlayers();await checkDeath(p)}
 async function checkDeath(p,cause,chance){
   if(p.done)return;
   const risk=G.course.risk||1;
@@ -927,6 +935,7 @@ async function afterlife(p){
   A.className='hidden';renderPlayers();
 }
 
+const evFor=k=>(G.course.ev&&G.course.ev[k])||EV[k];
 function nextTurn(){
   let n=0;
   do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0){G.round++;onRound()}n++}while(G.players[G.turn].done&&n<10);
@@ -1082,19 +1091,19 @@ async function resolveTile(p,t){
       await showCard('👶',tw===2?'双子が生まれた!':'赤ちゃん誕生!',deltaText(m,12*tw));await milestone(p,'👶',tw===2?'双子が誕生':'子どもが誕生',3);break;
     }
     case 'gain':{
-      const e=pick(EV.gain),m=sc(e[1]);gainMoney(p,m);beep(880,.15,'triangle');
+      const e=pick(evFor('gain')),m=sc(e[1]);gainMoney(p,m);beep(880,.15,'triangle');
       log(`💰 ${p.name}: ${e[0]} ${fmt(m)}`);await showCard('💰',e[0],deltaText(m,0));break;
     }
     case 'loss':{
-      const e=pick(EV.loss),m=sc(-e[1]);const l=loseMoney(p,m);beep(180,.2,'sawtooth');
+      const e=pick(evFor('loss')),m=sc(-e[1]);const l=loseMoney(p,m);beep(180,.2,'sawtooth');
       log(`💸 ${p.name}: ${e[0]} ${l?fmt(-l):'(防いだ)'}`);await showCard('💸',e[0],l?deltaText(-l,0):'🛡 シールドで防いだ!');break;
     }
     case 'happy':{
-      const e=pick(EV.happy),m=sc(-e[1]);p.happy+=e[2];p.cards++;if(m)p.money-=m;
+      const e=pick(evFor('happy')),m=sc(-e[1]);p.happy+=e[2];p.cards++;if(m)p.money-=m;
       log(`🃏 ${p.name}: 人生カード「${e[0]}」`);jingle([660,784]);await showCard('🃏','人生カード: '+e[0],deltaText(-m,e[2]));break;
     }
     case 'disaster':{
-      const e=pick(EV.disaster),m=sc(-e[1]);const l=loseMoney(p,m);p.happy+=e[2];beep(120,.4,'sawtooth',.08);
+      const e=pick(evFor('disaster')),m=sc(-e[1]);const l=loseMoney(p,m);p.happy+=e[2];beep(120,.4,'sawtooth',.08);
       log(`⚡ ${p.name}: ${e[0]} ${l?fmt(-l):'(防いだ)'}`);
       await showCard('⚡',e[0],(l?deltaText(-l,e[2]):'🛡 お金は守った!'+deltaText(0,e[2])));await checkDeath(p,pick(['大事故','災害']),.05*(G.course.risk||1));break;
     }
@@ -1107,7 +1116,7 @@ async function resolveTile(p,t){
       await moveBack(p,n);break;
     }
     case 'skip':{
-      const e=pick(EV.skip);p.skip=1;log(`💤 ${p.name}: ${e}`);await showCard('💤',e,'次回 一回休み');break;
+      const e=pick(evFor('skip'));p.skip=1;log(`💤 ${p.name}: ${e}`);await showCard('💤',e,'次回 一回休み');break;
     }
     case 'again':{
       G.extra=true;log(`🎲 ${p.name}はもう一回!`);jingle([784,1047]);await showCard('🎲','もう一回ルーレットをまわせる!');break;
@@ -1177,6 +1186,13 @@ const TITLES=['人生の大勝ち組 👑','堂々たる成功者 🌟','そこ�
 async function finishGame(){
   $('#rollBtn').disabled=true;$('#dblBtn').classList.add('hidden');
   await sleepRaw(600);
+  for(const p of G.players){
+    if(p.dead||p.afterPlace)continue;
+    p.age=Math.max(p.age,80);p.deathAge=p.age;mark(p,'🕊','天寿をまっとう');
+    log(`🕊 ${p.name}は天寿をまっとうした`);
+    await showCard('🕊',`${esc(p.name)}は天寿をまっとうした…`,'これから閻魔大王の判定へ');
+    await afterlife(p);
+  }
   G.players.forEach(p=>{p.houseFinal=p.house?Math.round(p.house[1]*(0.7+Math.random()*1.1)/5)*5:0});
   const ranked=[...G.players].sort((a,b)=>score(b)-score(a));
   jingle([523,659,784,1047,784,1047]);
@@ -1186,7 +1202,7 @@ async function finishGame(){
   if(newRec){best[G.course.id]=score(top);try{localStorage.setItem('sugoroku-best',JSON.stringify(best))}catch(e){}}
   const parts=p=>[
     ['💰','お金',p.money,'#4aa8ff'],['🏠','家の売却',p.houseFinal,'#3fae6a'],['👶','子ども',p.kids*40,'#ff8fb8'],
-    ['🃏','人生カード',p.cards*30,'#a77be0'],['😊','しあわせ',p.happy*5,'#ffb13d'],['🏖','到着ボーナス',p.bonus,'#d4a017'],...(G.stock!=null?[['📈','株の評価額',p.shares*G.stock,'#2fbf9b']]:[]),...(p.dead?[[p.afterPlace==='heaven'?'😇':'👹','あの世('+(p.afterPlace==='heaven'?'天国':'地獄')+')',p.afterBonus,'#8aa0ff']]:[])];
+    ['🃏','人生カード',p.cards*30,'#a77be0'],['😊','しあわせ',p.happy*5,'#ffb13d'],['🏖','到着ボーナス',p.bonus,'#d4a017'],...(G.stock!=null?[['📈','株の評価額',p.shares*G.stock,'#2fbf9b']]:[]),...(p.afterPlace?[[p.afterPlace==='heaven'?'😇':'👹','あの世('+(p.afterPlace==='heaven'?'天国':'地獄')+')',p.afterBonus,'#8aa0ff']]:[])];
   const maxTotal=Math.max(1,...ranked.map(p=>parts(p).reduce((a,x)=>a+Math.max(0,x[2]),0)));
   const sc0=score(top);
   const title=TITLES[sc0>=1200?0:sc0>=800?1:sc0>=500?2:sc0>=250?3:4];
