@@ -117,6 +117,16 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 .bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}.bar i{display:block;height:100%}
 .chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.chip{border:2px solid;border-radius:999px;padding:1px 8px;font-size:.76rem;white-space:nowrap}
 .modal .box{max-width:600px}
+#afterlife{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
+#afterlife.heaven{background:linear-gradient(#a9dcff,#fff6d0);color:#2b3442}
+#afterlife.hell{background:radial-gradient(circle at 50% 100%,#c0301a,#2a0707 70%);color:#ffe9dd}
+#afterlife.hidden{display:none}
+.al-box{max-width:520px;width:100%;text-align:center}
+.al-ic{font-size:5rem;line-height:1.1;animation:kbob .8s infinite alternate}.al-ti{font-size:1.4rem;font-weight:900;margin:6px 0}.al-tx{font-size:1.05rem;min-height:3.2em}
+.al-strip{font-size:1.8rem;margin:10px 0}.al-strip span{opacity:.35;display:inline-block}.al-strip span.done{opacity:.8}.al-strip span.cur{opacity:1;transform:scale(1.35)}.al-strip i{font-style:normal;font-size:1rem;opacity:.5;margin:0 3px}
+.al-sc{font-size:1.2rem;font-weight:900}
+#afterlife .plus{color:#1b9a3a}#afterlife.hell .plus{color:#7dff9a}#afterlife.hell .minus{color:#ff9d8d}
+.tl summary{font-weight:900;cursor:pointer;margin:10px 0 4px}.tl-y{border-left:3px solid var(--accent);padding:2px 0 2px 8px;margin:6px 0}.tl-h span{font-size:.82rem;opacity:.85}.tl-e{font-size:.8rem}
 .rank{display:grid;grid-template-columns:2.2em 1fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px dotted var(--line)}
 .rank small{display:block;opacity:.7}
 </style>
@@ -133,6 +143,11 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
     <h2 style="margin-top:12px">🤖 オート対戦のCPU(0〜3人・合計4人まで)</h2>
     <div class="seg" id="segCpu"></div>
     <div class="names" id="names"></div>
+  </div>
+  <div class="panel">
+    <h2>📅 はじまりの年(18歳からスタート)</h2>
+    <div class="seg" id="segYear"></div>
+    <div style="margin-top:8px">西暦 <input type="number" id="yearIn" min="1950" max="2030" value="2000" style="width:6em;padding:.3em;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit"> 年(1950〜2030)<br><small style="opacity:.75">節目(就職・結婚・出産・家・給料日)で年を取り、その年の時事が年表に残ります。年を取ると、病気や事故で亡くなることも…。</small></div>
   </div>
   <div class="panel">
     <h2>📖 内容モード</h2>
@@ -187,6 +202,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
   </div>
 </div>
 </div>
+<div id="afterlife" class="hidden"><div class="al-box"><div class="al-ic"></div><div class="al-ti"></div><div class="al-tx"></div><div class="al-strip"></div><div class="al-sc"></div></div></div>
 <div id="modal" class="modal hidden"><div class="box" id="modalBox"></div></div>
 
 <script>
@@ -205,15 +221,15 @@ const TILE={
 };
 const LEGEND={gain:'臨時収入',loss:'出費',happy:'人生カード',disaster:'大災難',jump:'ジャンプ',back:'もどる',skip:'一回休み',again:'もう一回',battle:'バトル',lucky:'ルーレット',item:'アイテム',payday:'給料日',news:'ニュース速報(話題)',gamble:'ギャンブル',stock:'コツコツ株'};
 const COURSES=[
- {id:'calm',emoji:'🌤',name:'のんびり平穏コース',desc:'いい事が多めで安心。はじめての人におすすめ。',len:56,scale:.7,pay:1,
+ {id:'calm',emoji:'🌤',name:'のんびり平穏コース',desc:'いい事が多めで安心。はじめての人におすすめ。',len:56,scale:.7,pay:1,risk:.5,
   w:{gain:4,loss:1,happy:5,disaster:0,jump:2,back:0,skip:1,again:2,battle:1,lucky:1,item:2,none:5}},
- {id:'wild',emoji:'🌪',name:'波瀾万丈コース',desc:'天国と地獄が交互にやってくる!逆転につぐ逆転のスタンダード。',len:76,scale:1.4,pay:1.2,
+ {id:'wild',emoji:'🌪',name:'波瀾万丈コース',desc:'天国と地獄が交互にやってくる!逆転につぐ逆転のスタンダード。',len:76,scale:1.4,pay:1.2,risk:1.5,
   w:{gain:3,loss:3,happy:2,disaster:2,jump:2,back:2,skip:2,again:1,battle:2,lucky:3,item:1,none:1}},
- {id:'jackpot',emoji:'💎',name:'一攫千金コース',desc:'金額が超ハイリスク。ルーレットとバトルで一発逆転!',len:70,scale:2.5,pay:1.5,
+ {id:'jackpot',emoji:'💎',name:'一攫千金コース',desc:'金額が超ハイリスク。ルーレットとバトルで一発逆転!',len:70,scale:2.5,pay:1.5,risk:1,
   w:{gain:4,loss:3,happy:1,disaster:2,jump:1,back:1,skip:1,again:2,battle:3,lucky:5,item:2,none:1}},
- {id:'black',emoji:'😈',name:'ブラック企業コース',desc:'出費・災難・一回休みの嵐。でも給料は倍!耐えきれるか。',len:70,scale:1.3,pay:2,
+ {id:'black',emoji:'😈',name:'ブラック企業コース',desc:'出費・災難・一回休みの嵐。でも給料は倍!耐えきれるか。',len:70,scale:1.3,pay:2,risk:2,
   w:{gain:2,loss:5,happy:1,disaster:3,jump:1,back:3,skip:3,again:1,battle:2,lucky:2,item:1,none:2}},
- {id:'comeback',emoji:'🔥',name:'大逆転コース',desc:'ギャンブルとコツコツ株で一発逆転!最下位ほどギャンブルに勝ちやすい。',len:70,scale:1.5,pay:1.2,stocks:true,
+ {id:'comeback',emoji:'🔥',name:'大逆転コース',desc:'ギャンブルとコツコツ株で一発逆転!最下位ほどギャンブルに勝ちやすい。',len:70,scale:1.5,pay:1.2,risk:1.2,stocks:true,
   w:{gain:2,loss:2,happy:1,disaster:1,jump:1,back:1,skip:1,again:2,battle:2,lucky:2,item:1,none:1,gamble:5,stock:5}},
  {id:'random',emoji:'🎯',name:'おまかせコース',desc:'上のコースからランダムで決定!',len:0,scale:0,pay:0,w:null},
 ];
@@ -231,7 +247,7 @@ const EV={
 const SPEEDS=[['ふつう',1],['はやい',.55],['じっくり',1.5],['超高速',.05]];
 
 /* ---------- セットアップ ---------- */
-const S={humans:1,cpus:1,course:'wild',speed:1,names:[],mode:'news',fixedNo:1};
+const S={humans:1,cpus:1,course:'wild',speed:1,names:[],mode:'news',fixedNo:1,startYear:2000};
 const CPU_NAMES=['CPU太郎','CPU花子','CPUジロー'];
 function seg(el,items,get,set){
   el.innerHTML='';
@@ -246,6 +262,8 @@ function renderSetup(){
   seg($('#segHuman'),[1,2,3,4].map(n=>[n+'人',n]),()=>S.humans,v=>S.humans=v);
   seg($('#segCpu'),[0,1,2,3].map(n=>[n?n+'人':'なし',n,S.humans+n>4]),()=>S.cpus,v=>S.cpus=v);
   seg($('#segSpeed'),SPEEDS.map(([l,v])=>['進行:'+l,v]),()=>S.speed,v=>S.speed=v);
+  seg($('#segYear'),[1960,1970,1980,1990,2000,2010,2020].map(y=>[y+'年',y]),()=>S.startYear,v=>S.startYear=v);
+  $('#yearIn').value=S.startYear;
   seg($('#segMode'),[['📰 時事モード(今日の話題が反映)','news'],['📌 固定モード(番号をえらぶ)','fixed']],()=>S.mode,v=>S.mode=v);
   const no=$('#segNo');no.classList.toggle('hidden',S.mode!=='fixed');
   if(S.mode==='fixed')seg(no,Array.from({length:12},(_,i)=>['No.'+(i+1),i+1]),()=>S.fixedNo,v=>S.fixedNo=v);
@@ -273,6 +291,7 @@ function renderSetup(){
 }
 // 開発中(localhost)は消音、公開サイトでは効果音オン
 $('#snd').checked=!['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+$('#yearIn').onchange=()=>{let v=parseInt($('#yearIn').value,10);if(!(v>=1950))v=1950;if(v>2030)v=2030;S.startYear=v;renderSetup()};
 buildWheel();
 renderSetup();
 
@@ -352,7 +371,7 @@ function startGame(){
   for(let i=0;i<total;i++){
     const cpu=i>=S.humans;
     players.push({id:i,name:cpu?CPU_NAMES[i-S.humans]:(S.names[i]||'プレイヤー'+(i+1)),cpu,color:COLORS[i],
-      pos:0,money:300,happy:0,college:false,house:null,houseFinal:0,cards:0,shares:0,cost:0,everLast:false,job:null,spouse:false,kids:0,items:{dice2:0,shield:0},skip:0,done:false,
+      pos:0,money:300,happy:0,college:false,house:null,houseFinal:0,cards:0,shares:0,cost:0,everLast:false,age:18,sin:0,dead:false,deathAge:0,afterPlace:null,afterBonus:0,timeline:[],single:false,job:null,spouse:false,kids:0,items:{dice2:0,shield:0},skip:0,done:false,
       goalRank:0,bonus:0,timeover:false,flags:{school:false,job:false,marry:false,baby:false,house:false},last:3});
   }
   const types=genBoard(course,rng);
@@ -362,8 +381,8 @@ function startGame(){
   const BR=addBranches(types,L.pts,rng);const surf=makeSurf(BR.goal+1,rng);
   const topicAt=[];let k=0;types.forEach((t,i)=>{if(t==='news')topicAt[i]=topics[k++%topics.length]});
   const gid=(G?G.gid:0)+1;
-  G={gid,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
-  G.stockHist=[G.stock];
+  G={gid,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
+  G.stockHist=[G.stock];G.players.forEach(q=>mark(q,'🚩','18歳・人生のスタート'));
   $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
   $('#courseName').textContent=`${course.emoji} ${course.name}`;
   $('#banner').classList.add('hidden');$('#log').innerHTML='';
@@ -569,7 +588,7 @@ const pk0=(r,a)=>a[Math.floor(r()*a.length)];
 function renderTokens(){
   if(!G||!G.tokLayer)return;
   const L=G.tokLayer;L.innerHTML='';
-  const byPos={};G.players.forEach(p=>{(byPos[p.pos]=byPos[p.pos]||[]).push(p)});
+  const byPos={};G.players.forEach(p=>{if(!p.dead)(byPos[p.pos]=byPos[p.pos]||[]).push(p)});
   for(const pos in byPos){
     const arr=byPos[pos],[x,y]=G.pts[pos],Rr=radius(G.board[pos]);
     arr.forEach((p,k)=>{
@@ -592,7 +611,7 @@ function renderPlayers(){
     d.innerHTML=`<div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${p.cpu?' 🤖':''} ${rankBadge(p)}${p.goalRank?` 🏁${p.goalRank}位`:p.timeover?' ⌛':''}</div>
     <div class="st"><span>💰 ${fmt(p.money)}</span><span>😊 ${p.happy}</span>
     <span>${job}</span><span>🚗${p.spouse?`<b class="peg" style="background:${p.color}"></b>`:''}${'<b class="peg kid"></b>'.repeat(Math.min(p.kids,6))}</span>
-    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}${G.stock!=null?' 📈×'+p.shares:''}</span><span>📍上がりまで${G.rem[p.pos]}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span></div>`;
+    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}${G.stock!=null?' 📈×'+p.shares:''}</span><span>📍上がりまで${G.rem[p.pos]}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span><span style="grid-column:1/3">🎂${p.age}歳・${yearOf(p)}年${p.dead?' ☠'+(p.afterPlace==='heaven'?'😇天国':'👹地獄'):''}</span></div>`;
     box.appendChild(d);
   });
 }
@@ -704,7 +723,7 @@ async function moveForward(p,n){
     if(nx===undefined||nx===G.goal)break;
     p.pos=nx;renderTokens();beep(500+i*20,.05);await sleep(130);
     if(G.board[p.pos]==='payday'&&p.job){const sal=salary(p);gainMoney(p,sal);log(`💴 ${p.name}は給料日を通過 +${sal}万円`)}
-    if(G.board[p.pos]==='payday')dividend(p);
+    if(G.board[p.pos]==='payday'){dividend(p);await ageTick(p);if(p.done)break}
   }
   renderPlayers();
 }
@@ -737,7 +756,7 @@ async function mainLoop(){
 }
 /* ---------- 順位・株・ギャンブル ---------- */
 const LAST_MSG=['人生はこれから!逆転のチャンスはまだある!','ドンマイ!次はきっと上位だ!','のびしろ最強。伝説はここから!','最下位でも、笑顔ならいい人生!'];
-function liveScore(p){return p.money+p.happy*5+p.cards*30+p.kids*40+(p.house?p.house[1]:0)+p.bonus+p.shares*(G.stock||0)}
+function liveScore(p){return p.money+p.happy*5+p.cards*30+p.kids*40+(p.house?p.house[1]:0)+p.bonus+p.afterBonus+p.shares*(G.stock||0)}
 function showLast(p){return G.players.length>1&&G.round>=2&&isLast(p)}
 function isLast(p){const a=G.players;return a.length>1&&a.every(q=>q===p||liveScore(q)>liveScore(p))}
 function rankBadge(p){
@@ -784,7 +803,7 @@ async function gamble(p){
       [...opts.map(o=>o[0]+': '+o[1]+'万円 → 勝率'+Math.round((o[2]+boost)*100)+'%で'+o[3]+'倍'),'やめておく']);
   }
   if(i<0||i>=3){log(`🏇 ${p.name}は勝負を見送った`);await showCard('🏇','勝負を見送った');return}
-  const [nm,bet,wr,mul]=opts[i];
+  const [nm,bet,wr,mul]=opts[i];p.sin+=i===2?5:3;
   await showCard('🏇',`${esc(p.name)}は「${nm}」に${bet}万円!`,'勝負…!');
   if(Math.random()<wr+boost){
     const g=bet*(mul-1);gainMoney(p,g);jingle([784,988,1175,1568]);
@@ -817,6 +836,95 @@ async function stockTile(p){
     const n=act==='buy3'?3:act==='buy2'?2:1,c=n*pr;p.money-=c;p.shares+=n;p.cost+=c;
     log(`📈 ${p.name}は株を${n}株購入 -${c}万円`);await showCard('📈',`${n}株を購入!`,deltaText(-c,0));
   }else{log(`📈 ${p.name}は株を見送った`)}
+}
+
+/* ---------- 年・時事・死亡・あの世 ---------- */
+const YEAR_NEWS={
+1950:'朝鮮戦争が勃発',1951:'サンフランシスコ平和条約に調印',1952:'日本が主権を回復(平和条約が発効)',1953:'NHKがテレビ放送を開始',
+1954:'映画「ゴジラ」が公開',1955:'トヨタ「クラウン」が発売',1956:'日本が国連に加盟',1957:'ソ連が人工衛星スプートニク1号を打ち上げ',
+1958:'東京タワーが完成、インスタントラーメンが発売',1959:'皇太子明仁親王のご成婚',1960:'所得倍増計画が発表される',1961:'ガガーリンが人類初の宇宙飛行',
+1962:'キューバ危機',1963:'ケネディ米大統領が暗殺される',1964:'東京オリンピック開催、東海道新幹線が開業',1965:'いざなぎ景気が始まる',
+1966:'ビートルズが来日',1967:'リカちゃん人形が発売',1968:'川端康成がノーベル文学賞を受賞',1969:'アポロ11号が月面に着陸',
+1970:'大阪万博(日本万国博覧会)が開催',1971:'カップヌードルが発売',1972:'沖縄が日本に復帰、日中国交正常化',1973:'第一次オイルショック',
+1974:'長嶋茂雄が現役を引退',1975:'ベトナム戦争が終結',1976:'ロッキード事件',1977:'王貞治が本塁打世界記録(756号)を達成',
+1978:'成田空港が開港、日中平和友好条約を締結',1979:'ソニーが「ウォークマン」を発売',1980:'モスクワ五輪を日本がボイコット',1981:'スペースシャトルが初めて打ち上げられる',
+1982:'東北・上越新幹線が開業、CDが発売',1983:'東京ディズニーランド開園、ファミコン発売',1984:'ロサンゼルス五輪が開催',1985:'つくば科学万博が開催',
+1986:'チェルノブイリ原発事故',1987:'国鉄が分割民営化されJRに',1988:'青函トンネルと瀬戸大橋が開通',1989:'昭和から平成へ、ベルリンの壁崩壊、消費税(3%)導入',
+1990:'東西ドイツが統一',1991:'ソ連が崩壊、バブル経済が崩壊',1992:'バルセロナ五輪が開催',1993:'Jリーグが開幕',
+1994:'関西国際空港が開港',1995:'阪神・淡路大震災、Windows 95が発売',1996:'ゲーム「ポケットモンスター」が発売',1997:'消費税が5%に、香港が中国に返還',
+1998:'長野冬季五輪が開催',1999:'携帯電話のiモードが開始',2000:'九州・沖縄サミット、2000年問題',2001:'アメリカ同時多発テロ',
+2002:'日韓共催のサッカーW杯',2003:'地上デジタル放送が開始',2004:'アテネ五輪、新紙幣が発行',2005:'愛・地球博(愛知万博)が開催',
+2006:'トリノ五輪で荒川静香が金メダル',2007:'iPhoneが発表される',2008:'リーマン・ショック、北京五輪',2009:'民主党への政権交代',
+2010:'小惑星探査機「はやぶさ」が帰還',2011:'東日本大震災',2012:'東京スカイツリーが開業',2013:'2020年の東京五輪開催が決定',
+2014:'消費税が8%に',2015:'北陸新幹線が開業',2016:'「ポケモンGO」が大流行、リオ五輪',2017:'藤井聡太四段がデビューから29連勝',
+2018:'平昌冬季五輪が開催',2019:'平成から令和へ',2020:'新型コロナウイルスが世界的に流行、東京五輪が延期',2021:'東京五輪が無観客で開催',
+2022:'ロシアがウクライナに侵攻、北京冬季五輪',2023:'WBCで侍ジャパンが優勝、新型コロナが5類に移行',2024:'パリ五輪が開催、新紙幣が発行',2025:'大阪・関西万博が開催'
+};
+const newsOf=y=>YEAR_NEWS[y]||(y>2025?'🔮 まだ誰も知らない未来の出来事…':'時代はゆっくり動いていた');
+const yearOf=p=>G.startYear+(p.age-18);
+function mark(p,icon,text){const y=yearOf(p);p.timeline.push({year:y,age:p.age,icon,text})}
+async function milestone(p,icon,text,years){
+  p.age+=years;mark(p,icon,text);
+  log(`📅 ${p.name} ${p.age}歳(${yearOf(p)}年) ${icon}${text} ／ 🗞 ${newsOf(yearOf(p))}`);
+  renderPlayers();
+  await showCard('📅',`${yearOf(p)}年・${p.age}歳`,`${icon} ${esc(text)}<br><small>🗞 ${esc(newsOf(yearOf(p)))}</small>`);
+  await checkDeath(p);
+}
+async function ageTick(p){p.age+=3;mark(p,'💴','給料日(働き盛り)');renderPlayers();await checkDeath(p)}
+async function checkDeath(p,cause,chance){
+  if(p.done)return;
+  const risk=G.course.risk||1;
+  const ch=chance!=null?chance:(0.01+Math.max(0,p.age-40)*0.005)*risk;
+  if(Math.random()>=ch)return;
+  if(p.items.shield>0){p.items.shield--;log(`🛡 ${p.name}は、お守り(シールド)が身代わりになって命拾い!`);await showCard('🛡','お守りが身代わりになった!');return}
+  await die(p,cause||(p.age>=70?'老衰':pick(['急な病気','不慮の事故','過労'])));
+}
+async function die(p,cause){
+  p.dead=true;p.done=true;p.deathAge=p.age;mark(p,'☠',`${cause}で死去`);
+  renderPlayers();renderTokens();
+  log(`☠ ${p.name}は${p.age}歳(${yearOf(p)}年)で${cause}…`);
+  jingle([392,330,262,196]);
+  await showCard('☠',`${esc(p.name)}は${p.age}歳で${esc(cause)}…`,`${yearOf(p)}年・🗞 ${esc(newsOf(yearOf(p)))}`);
+  await afterlife(p);
+}
+async function afterlife(p){
+  const virtue=p.happy+p.cards*5+p.kids*8+(p.spouse?10:0),sin=p.sin;
+  const heaven=virtue-sin*3>=40;
+  p.afterPlace=heaven?'heaven':'hell';
+  const A=$('#afterlife'),q=s=>A.querySelector(s);
+  A.className=heaven?'heaven':'hell';
+  const steps=heaven?[
+    {ic:'☁️',t:'天国の門',x:'白い門が開いた。「よくがんばりましたね」',b:30},
+    {ic:'🌸',t:'花畑',x:'見渡すかぎりの花畑。心がふわっと軽くなる。',b:40},
+    {ic:'♨️',t:'天空の温泉',x:'雲の上の温泉でぷかぷか…最高!',b:50},
+    {ic:'🎎',t:'なつかしい人との再会',x:(p.spouse||p.kids)?'家族や大切な人と再会できた!':'昔の友達と再会して大盛り上がり!',b:(p.spouse||p.kids)?70:40},
+    (()=>{const o=pick([['🌟','来世は大金持ちに転生!',160],['🍀','来世もしあわせいっぱい!',110],['🐱','来世はのんびりねこに転生…',90],['😇','そのまま天使になった!',130]]);return {ic:o[0],t:'転生ルーレット',x:o[1],b:o[2]}})()
+  ]:[
+    {ic:'🌊',t:'三途の川',x:'渡し賃がたりない…ぐっしょり。',b:-40},
+    {ic:'🗡',t:'針の山',x:'ヒィィ!登るのが大変すぎる…',b:-60},
+    {ic:'🩸',t:'血の池地獄',x:'ぬるぬるで気持ち悪い…',b:-60},
+    {ic:'👹',t:'閻魔大王の取り調べ',x:'「うそをつくと、舌を抜くぞ!」',b:-(30+Math.min(60,sin*3))},
+    (()=>{const ok=Math.random()<(virtue>20?.5:.4);return ok?{ic:'🕸',t:'蜘蛛の糸',x:'糸をのぼりきった!地獄から脱出して来世へ転生!',b:160}:{ic:'🕸',t:'蜘蛛の糸',x:'あと少しで糸が切れた…!',b:-30}})()
+  ];
+  q('.al-ic').textContent=heaven?'😇':'👹';
+  q('.al-ti').textContent=heaven?'天国行き!':'地獄行き…';
+  q('.al-tx').innerHTML='閻魔大王の判定<br><small>徳 '+virtue+' − 罪 '+sin+'×3 = '+(virtue-sin*3)+(heaven?'(40以上で天国)':'(40未満は地獄)')+'</small>';
+  q('.al-strip').innerHTML='';q('.al-sc').textContent='';
+  await sleep(2400);
+  let total=0;
+  for(let i=0;i<steps.length;i++){
+    const s=steps[i];total+=s.b;
+    q('.al-strip').innerHTML=steps.map((z,k)=>'<span class="'+(k<i?'done':k===i?'cur':'')+'">'+z.ic+'</span>').join('<i>→</i>');
+    q('.al-ic').textContent=s.ic;q('.al-ti').textContent=(heaven?'天国コース':'地獄コース')+' '+(i+1)+'/'+steps.length+' ・ '+s.t;
+    q('.al-tx').textContent=s.x;
+    q('.al-sc').innerHTML='<span class="'+(s.b>=0?'plus':'minus')+'">'+(s.b>=0?'+':'')+s.b+'点</span> (あの世の合計 '+total+'点)';
+    beep(s.b>=0?880:160,.2,s.b>=0?'triangle':'sawtooth');
+    await sleep(2000);
+  }
+  p.afterBonus=total;
+  mark(p,heaven?'😇':'👹',(heaven?'天国':'地獄')+'コースを歩んだ('+(total>=0?'+':'')+total+'点)');
+  log(`${heaven?'😇':'👹'} ${p.name}は${heaven?'天国':'地獄'}コースを歩んだ ${total>=0?'+':''}${total}点`);
+  A.className='hidden';renderPlayers();
 }
 
 function nextTurn(){
@@ -879,6 +987,7 @@ async function playTurn(p){
       gainMoney(p,sal);dividend(p);renderPlayers();jingle([660,880]);
       log(`💴 ${p.name}は給料日! +${sal}万円${j?'':'(無職のバイト代)'}`);
       if(s<total-1)await showCardQuick('💴',`給料日! +${sal}万円`);
+      await ageTick(p);if(p.done)return;
     }
     if(STOPS.includes(t)&&!p.flags[t])break;
   }
@@ -892,7 +1001,7 @@ async function showCardQuick(icon,text){
 
 async function reachGoal(p){
   p.done=true;G.finish.push(p);p.goalRank=G.finish.length;
-  p.bonus=[300,150,80,30][p.goalRank-1]||0;p.money+=0;
+  p.bonus=[300,150,80,30][p.goalRank-1]||0;mark(p,'🏖','上がり('+p.age+'歳で退職)');
   jingle([523,659,784,1047]);
   log(`🏖 ${p.name}が老後へ到着! ${p.goalRank}位 (ボーナス${p.bonus}点)`);
   if(!G.firstGoal){
@@ -919,6 +1028,7 @@ async function resolveTile(p,t){
       else go=(await modal(`<h2>🎓 ${p.name}の進路</h2><div>大学に行くと学費がかかるけど、就ける職業と給料がアップ(給料×1.25)!</div>`,[`🎓 大学に進学 (-${fee}万円)`,'💼 すぐ就職をめざす']))===0;
       if(go){p.college=true;p.money-=fee;p.happy+=5;log(`🎓 ${p.name}は大学へ進学`);await showCard('🎓',`${p.name}は大学へ!`,deltaText(-fee,5))}
       else{log(`💼 ${p.name}は高卒で就職をめざす`);await showCard('💼',`${p.name}は社会へ飛び出す!`)}
+      await milestone(p,go?'🎓':'💼',go?'大学へ進学':'高卒で社会へ',0);
       break;
     }
     case 'house':{
@@ -929,6 +1039,7 @@ async function resolveTile(p,t){
       else{const i=await modal(`<h2>🏠 ${p.name}、お家を買いますか?</h2><div>ゴール時に土地の値動きで売値が変わります(0.7〜1.8倍!)</div>`,[...hs.map(x=>`${x[0]} ${x[1]}万円`),'買わない']);h=hs[i]||null}
       if(h){p.house=h;p.money-=h[1];p.happy+=8;jingle([523,784]);log(`🏠 ${p.name}は${h[0]}を購入`);await showCard('🏠',`${h[0]}を購入!`,deltaText(-h[1],8))}
       else{log(`🏠 ${p.name}は家を買わなかった`);await showCard('🏠','賃貸暮らしを選んだ')}
+      await milestone(p,'🏠',h?h[0]+'を購入':'賃貸暮らしを選ぶ',3);
       break;
     }
     case 'job':{
@@ -942,20 +1053,33 @@ async function resolveTile(p,t){
           opts.map(o=>`${o[1]} ${o[0]}<br><small>給料 ${Math.round(o[2]*G.course.pay*(p.college?1.25:1))}〜${Math.round(o[3]*G.course.pay*(p.college?1.25:1))}万円${o[2]!==o[3]?'(ブレあり)':''}</small>`));
         ch=opts[i];
       }
-      p.job=ch;p.happy+=5;log(`💼 ${p.name}は${ch[0]}になった`);jingle([523,659,784]);break;
+      p.job=ch;p.happy+=5;log(`💼 ${p.name}は${ch[0]}になった`);jingle([523,659,784]);await milestone(p,'💼',ch[0]+'になる',p.college?4:1);break;
     }
     case 'marry':{
-      if(p.flags.marry)break;p.flags.marry=true;p.spouse=true;
-      const m=sc(150)-sc(100);gainMoney(p,m);p.happy+=15;
-      log(`💒 ${p.name}は結婚!`);jingle([659,784,988,1319]);
-      await showCard('💒',`${p.name}、ご結婚おめでとう!`,deltaText(m,15));break;
+      if(p.flags.marry)break;p.flags.marry=true;
+      let yes;
+      if(p.cpu)yes=Math.random()<.7;
+      else yes=(await modal('<h2>💒 '+esc(p.name)+'、結婚する?</h2><div>結婚すると、ご祝儀が入って しあわせ+15、子どもも授かれます。独身を選ぶと、自由に使えるお金と しあわせ+5 がもらえます。</div>',['💒 結婚する','🕊 独身を貫く']))===0;
+      if(yes){
+        p.spouse=true;const m=sc(150)-sc(100);gainMoney(p,m);p.happy+=15;
+        log(`💒 ${p.name}は結婚!`);jingle([659,784,988,1319]);
+        await showCard('💒',`${esc(p.name)}、ご結婚おめでとう!`,deltaText(m,15));
+        await milestone(p,'💒','結婚',4);
+      }else{
+        const m=sc(30);gainMoney(p,m);p.happy+=5;
+        log(`🕊 ${p.name}は独身を貫くことにした`);
+        await showCard('🕊',`${esc(p.name)}は独身を貫く`,deltaText(m,5));
+        await milestone(p,'🕊','独身を貫く',4);
+      }
+      break;
     }
     case 'baby':{
       if(p.flags.baby)break;p.flags.baby=true;
+      if(!p.spouse){const pm=-sc(20);p.money+=pm;p.happy+=10;log(`🐶 ${p.name}はペットを迎えた`);await showCard('🐶','ペットを迎えた!',deltaText(pm,10));await milestone(p,'🐶','ペットを迎える',3);break}
       const tw=Math.random()<.12?2:1;p.kids+=tw;
       const m=-sc(50)*tw;p.money+=m;p.happy+=12*tw;
       log(`👶 ${p.name}に赤ちゃん${tw===2?'(双子!)':''}`);jingle([784,988,1175]);
-      await showCard('👶',tw===2?'双子が生まれた!':'赤ちゃん誕生!',deltaText(m,12*tw));break;
+      await showCard('👶',tw===2?'双子が生まれた!':'赤ちゃん誕生!',deltaText(m,12*tw));await milestone(p,'👶',tw===2?'双子が誕生':'子どもが誕生',3);break;
     }
     case 'gain':{
       const e=pick(EV.gain),m=sc(e[1]);gainMoney(p,m);beep(880,.15,'triangle');
@@ -972,7 +1096,7 @@ async function resolveTile(p,t){
     case 'disaster':{
       const e=pick(EV.disaster),m=sc(-e[1]);const l=loseMoney(p,m);p.happy+=e[2];beep(120,.4,'sawtooth',.08);
       log(`⚡ ${p.name}: ${e[0]} ${l?fmt(-l):'(防いだ)'}`);
-      await showCard('⚡',e[0],(l?deltaText(-l,e[2]):'🛡 お金は守った!'+deltaText(0,e[2])));break;
+      await showCard('⚡',e[0],(l?deltaText(-l,e[2]):'🛡 お金は守った!'+deltaText(0,e[2])));await checkDeath(p,pick(['大事故','災害']),.05*(G.course.risk||1));break;
     }
     case 'jump':{
       const n=rnd(3,5);log(`⏩ ${p.name}は${n}マスジャンプ!`);await showCard('⏩',`ジャンプ! ${n}マス進む`);
@@ -1014,6 +1138,7 @@ async function battle(p){
   const amt=sc(80);
   if(a===b){log(`⚔️ ${p.name} vs ${foe.name}: 引き分け`);await showCard('🤝','引き分け!');return}
   const win=a>b?p:foe,lose=a>b?foe:p;
+  if(!win.npc)win.sin=(win.sin||0)+5;
   let got=amt;
   if(!lose.npc){got=loseMoney(lose,amt)}
   if(!win.npc){win.money+=got||0}
@@ -1047,7 +1172,7 @@ async function roulette(p){
 }
 
 /* ---------- 結果 ---------- */
-function score(p){return p.money+p.happy*5+p.bonus+p.houseFinal+p.cards*30+p.kids*40+p.shares*(G.stock||0)}
+function score(p){return p.money+p.happy*5+p.bonus+p.houseFinal+p.cards*30+p.kids*40+p.afterBonus+p.shares*(G.stock||0)}
 const TITLES=['人生の大勝ち組 👑','堂々たる成功者 🌟','そこそこ幸せ 😊','苦労人 💪','波瀾万丈すぎた人生 🌪'];
 async function finishGame(){
   $('#rollBtn').disabled=true;$('#dblBtn').classList.add('hidden');
@@ -1061,7 +1186,7 @@ async function finishGame(){
   if(newRec){best[G.course.id]=score(top);try{localStorage.setItem('sugoroku-best',JSON.stringify(best))}catch(e){}}
   const parts=p=>[
     ['💰','お金',p.money,'#4aa8ff'],['🏠','家の売却',p.houseFinal,'#3fae6a'],['👶','子ども',p.kids*40,'#ff8fb8'],
-    ['🃏','人生カード',p.cards*30,'#a77be0'],['😊','しあわせ',p.happy*5,'#ffb13d'],['🏖','到着ボーナス',p.bonus,'#d4a017'],...(G.stock!=null?[['📈','株の評価額',p.shares*G.stock,'#2fbf9b']]:[])];
+    ['🃏','人生カード',p.cards*30,'#a77be0'],['😊','しあわせ',p.happy*5,'#ffb13d'],['🏖','到着ボーナス',p.bonus,'#d4a017'],...(G.stock!=null?[['📈','株の評価額',p.shares*G.stock,'#2fbf9b']]:[]),...(p.dead?[[p.afterPlace==='heaven'?'😇':'👹','あの世('+(p.afterPlace==='heaven'?'天国':'地獄')+')',p.afterBonus,'#8aa0ff']]:[])];
   const maxTotal=Math.max(1,...ranked.map(p=>parts(p).reduce((a,x)=>a+Math.max(0,x[2]),0)));
   const sc0=score(top);
   const title=TITLES[sc0>=1200?0:sc0>=800?1:sc0>=500?2:sc0>=250?3:4];
@@ -1074,12 +1199,19 @@ async function finishGame(){
       +'<div class="rr-top"><span class="medal">'+(i===ranked.length-1&&ranked.length>1?'🐢最下位':['🥇','🥈','🥉','4位'][i])+'</span>'
       +'<span class="dot" style="background:'+p.color+'"></span><b class="rn">'+esc(p.name)+(p.cpu?' 🤖':'')+'</b>'
       +'<span class="rsc">'+score(p)+'点</span></div>'
-      +'<div class="rr-sub">'+job+' / '+(p.spouse?'💒結婚':'独身')+' / '+(p.house?p.house[0]:'賃貸')+' / '+(p.goalRank?'🏖'+p.goalRank+'位で上がり':'⌛上がれず')+'</div>'
+      +'<div class="rr-sub">'+job+' / '+(p.spouse?'💒結婚':'独身')+' / '+(p.house?p.house[0]:'賃貸')+' / '+(p.dead?'☠'+p.deathAge+'歳で死去':p.goalRank?'🏖'+p.goalRank+'位で上がり':'⌛上がれず')+'</div>'
       +(i===ranked.length-1&&ranked.length>1?'<div class="rr-last">🐢 トップと'+(sc0-score(p))+'点差 — '+LAST_MSG[Math.floor(Math.random()*LAST_MSG.length)]+'</div>':'')+'<div class="bar">'+ps.filter(x=>x[2]>0).map(x=>'<i style="width:'+(x[2]/maxTotal*100)+'%;background:'+x[3]+'" title="'+x[1]+'"></i>').join('')+'</div>'
       +'<div class="chips">'+ps.map(x=>'<span class="chip" style="border-color:'+x[3]+'">'+x[0]+' '+x[1]+' <b class="'+(x[2]<0?'minus':'')+'">'+(x[2]<0?'':'+')+x[2]+'</b></span>').join('')+'</div>'
       +'</div>';
   });
-  html+='</div>';
+  const byYear={};
+  G.players.forEach(p=>p.timeline.forEach(e=>{(byYear[e.year]=byYear[e.year]||[]).push([p,e])}));
+  html+='<details class="tl" open><summary>📜 みんなの人生年表(その年の時事つき)</summary>';
+  Object.keys(byYear).map(Number).sort((a,b)=>a-b).forEach(y=>{
+    html+='<div class="tl-y"><div class="tl-h"><b>'+y+'年</b> <span>🗞 '+esc(newsOf(y))+'</span></div>'
+      +byYear[y].map(([p,e])=>'<div class="tl-e"><span class="dot" style="display:inline-block;width:10px;height:10px;background:'+p.color+'"></span> '+esc(p.name)+' '+e.age+'歳 '+e.icon+' '+esc(e.text)+'</div>').join('')+'</div>';
+  });
+  html+='</details></div>';
   const i=await modal(html,['🔁 もう一度(同じ設定)','⚙ 設定にもどる']);
   if(i===0)startGame();else toTitle();
 }
