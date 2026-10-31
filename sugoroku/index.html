@@ -637,7 +637,7 @@ function renderPlayers(){
     d.innerHTML=`<div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${p.cpu?' 🤖':''} ${rankBadge(p)}${p.bankrupt?'<span class="bdg" style="background:#555">💥破産中</span>':''}${p.goalRank?` 🏁${p.goalRank}位`:p.timeover?' ⌛':''}</div>
     <div class="st"><span>💰 ${fmt(p.money)}</span><span>😊 ${p.happy}</span>
     <span>${job}</span><span>🚗${p.spouse?`<b class="peg" style="background:${p.color}"></b>`:''}${'<b class="peg kid"></b>'.repeat(Math.min(p.kids,6))}</span>
-    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}${G.stock!=null?' 📈×'+p.shares:''}</span><span>${p.bankrupt?'📍破産コース':'📍上がりまで'+G.rem[p.pos]}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span><span style="grid-column:1/3">🎂${p.age}歳・${yearOf(p)}年${p.dead?' ☠'+(p.afterPlace==='heaven'?'😇天国':'👹地獄'):''}</span></div>`;
+    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}${G.stock!=null?' 📈×'+p.shares:''}${G.course.ethics?' 🧭徳'+p.virtue:''}</span><span>${p.bankrupt?'📍破産コース':'📍上がりまで'+G.rem[p.pos]}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span><span style="grid-column:1/3">🎂${p.age}歳・${yearOf(p)}年${p.dead?' ☠'+(p.afterPlace==='heaven'?'😇天国':'👹地獄'):''}</span></div>`;
     box.appendChild(d);
   });
 }
@@ -955,29 +955,70 @@ async function afterlife(p){
 
 const evFor=k=>(G.course.ev&&G.course.ev[k])||EV[k];
 /* ---------- ボーナスチャンス・破産コース(リアル人生コース用) ---------- */
-const BONUS=[
- {w:4,t:'💰 ボーナス金!',f:async p=>{const m=sc(rnd(40,100));p.money+=m;return deltaText(m,0)}},
- {w:1,t:'💎 大当たり!',f:async p=>{const m=sc(250);p.money+=m;jingle([784,988,1175,1568]);return deltaText(m,0)}},
- {w:3,t:'😊 しあわせアップ',f:async p=>{const h=rnd(4,10);p.happy+=h;return deltaText(0,h)}},
- {w:2,t:'🎁 アイテムゲット',f:async p=>giveItem(p)+' をゲット!'},
- {w:2,t:'🃏 人生カード',f:async p=>{p.cards++;p.happy+=3;return deltaText(0,3)+' 🃏+1'}},
- {w:2,t:'⏩ 3マス進む',f:async p=>{await moveForward(p,3);return '3マス前へ!'}},
- {w:2,t:'☕ ちょっと一息…',f:async p=>'何もなし'},
+const ETHICS=[
+ ['電車でお年寄りが立っている。あなたはヘトヘトに疲れている…',[['席をゆずる',0,4],['寝たふりをする',0,-4]]],
+ ['道で1万円札を拾った。',[['交番に届ける',0,6],['こっそりポケットへ',10,-6]]],
+ ['コンビニで、おつりを多くもらったことに気づいた。',[['すぐ返す',0,4],['そのまま帰る',5,-4]]],
+ ['同僚が大きなミスをして困っている。',[['残業してフォローする',-10,5],['知らんぷりする',0,-3],['上司に告げ口して評価を上げる',15,-6]]],
+ ['駅前で募金を呼びかけている人がいた。',[['千円入れる',-10,4],['素通りする',0,-1]]],
+ ['友人に「お金を貸してほしい」と頼まれた。',[['貸す(返ってこないかも)',-30,5],['やんわり断る',0,0],['利子をつけて貸す',10,-5]]],
+ ['親の介護が必要に。仕事も忙しい。',[['仕事を調整して介護を手伝う',-30,7],['すべて施設に任せて仕事に集中',20,-2]]],
+ ['会社の備品をこっそり持ち帰れそう。',[['やめておく',0,3],['持ち帰る',5,-5]]],
+ ['近所で、ゴミ捨てルールを守らない人を見かけた。',[['やさしく声をかける',0,4],['見なかったことにする',0,0],['SNSで晒す',0,-6]]],
+ ['後輩が仕事のことで悩んでいる。',[['ごはんをおごって相談にのる',-15,6],['自分の仕事で精一杯',0,-1]]],
+ ['道に迷っている外国人旅行者がいる。',[['案内してあげる',0,5],['急いでいるのでスルー',0,-2]]],
+ ['ボランティア活動に誘われた。',[['参加する',-10,6],['断る',0,0]]],
+ ['税金をうまくごまかせる抜け道を知った。',[['正しく申告する',0,4],['ごまかす',40,-8]]],
+ ['取引先から「内緒でお礼を」と封筒を差し出された。',[['きっぱり断る',0,6],['受け取る',60,-10]]],
+ ['誰も見ていない場所に、ごみが落ちている。',[['拾って捨てる',0,3],['無視する',0,-1]]],
+ ['友達の悪口で、みんなが盛り上がっている。',[['さりげなく話題を変える',0,3],['一緒に盛り上がる',0,-4]]],
+ ['大切な人の誕生日が近づいている。',[['心をこめてプレゼントを選ぶ',-20,4],['忘れたふりをする',0,-4]]],
+ ['ネットで見つけた不確かなうわさ話。',[['確かめるまで広めない',0,3],['面白いので拡散する',0,-5]]],
+ ['店員さんが、理不尽にお客さんに怒鳴られている。',[['間に入って助ける',0,5],['見て見ぬふり',0,-2]]],
+ ['献血を呼びかけられた。',[['協力する',0,4],['断る',0,0]]],
+ ['資格試験中、隣の答案が見えてしまった。',[['目をそらす',0,4],['写してしまう',10,-7]]],
+ ['自分の手柄を、上司に横取りされた。',[['冷静に抗議する',0,2],['部下に同じことをやり返す',10,-5]]],
+ ['災害ボランティアの募集があった。',[['休みをとって参加する',-20,8],['寄付だけする',-10,3],['参加しない',0,0]]],
+ ['親戚のおじいさんが、あやしい投資話に引っかかりそう。',[['止めて、きちんと説明する',-5,6],['放っておく',0,-4]]],
+ ['学校で、ひとりぼっちの子を見かけた。',[['声をかける',0,5],['関わらない',0,-1]]],
+ ['自分のミスをごまかせるチャンスが来た。',[['正直に報告する',-15,5],['部下のせいにする',10,-8]]],
+ ['恩師が入院したと聞いた。',[['お見舞いに行く',-10,4],['忙しいので行かない',0,-2]]],
+ ['食べきれないほどの食べ物が余った。',[['フードバンクに寄付',-5,4],['捨てる',0,-1]]],
+ ['待ち合わせに遅れそう。',[['正直に連絡して謝る',0,2],['うその理由を言う',0,-3]]],
+ ['雨の日、道ばたに迷子の犬がいた。',[['保護して飼い主を探す',-15,6],['通り過ぎる',0,-2]]],
+ ['「楽して儲かる」と言う投資話を持ちかけられた。',[['きっぱり断る',0,2],['乗ってみる',40,-6]]],
+ ['苦手な上司が、トラブルで困っている。',[['それでも助ける',-5,5],['いい気味だと思う',0,-4]]],
+ ['落とし物の財布を見つけた。中には現金が入っている。',[['警察に届ける',0,6],['中身だけ抜き取る',30,-9]]],
+ ['地域のお祭りの手伝いを頼まれた。',[['喜んで手伝う',-5,4],['忙しいと断る',0,-1]]],
+ ['同窓会で、昔いじめられた相手と再会した。',[['水に流して笑顔で話す',0,4],['無視する',0,-1],['昔のことを蒸し返す',0,-4]]],
 ];
-let bonusBag=0;
+let ethBag=[];
+function drawQuestion(){
+  if(!ethBag.length)ethBag=ETHICS.map((_,i)=>i).sort(()=>Math.random()-.5);
+  return ETHICS[ethBag.pop()];
+}
 async function bonusChance(p){
-  const deck=[];
-  for(let i=0;i<3;i++){
-    const pool=BONUS.flatMap(b=>Array(b.w).fill(b));
-    deck.push(pool[Math.floor(Math.random()*pool.length)]);
-  }
+  const cards=[drawQuestion(),drawQuestion(),drawQuestion()];
   let ch;
   if(p.cpu)ch=Math.floor(Math.random()*3);
-  else ch=await modal('<h2>🎁 ボーナスチャンス!</h2><div>伏せられた3枚のカードから、1枚えらんでね!</div>',['🎴 カード①','🎴 カード②','🎴 カード③']);
-  const b=deck[ch];
-  const res=await b.f(p);
-  log('🎁 '+p.name+'のボーナスチャンス: '+b.t);
-  if(!p.cpu){beep(880,.15,'triangle');await showCard('🎁',b.t,res)}
+  else ch=await modal('<h2>🎁 ボーナスチャンス!</h2><div>伏せられた3枚のカードから1枚えらんでね。<br>カードには「人徳の問い」が…!よい行いには、ボーナスが待っているかも?</div>',['🎴 カード①','🎴 カード②','🎴 カード③']);
+  const [q,opts]=cards[ch];
+  let c2;
+  if(p.cpu){
+    const best=opts.reduce((a,o,i)=>o[2]>opts[a][2]?i:a,0);
+    c2=Math.random()<p.ethic?best:Math.floor(Math.random()*opts.length);
+  }else{
+    c2=await modal('<h2>🧭 人徳の問い</h2><div>'+esc(q)+'</div>',opts.map(o=>esc(o[0])));
+  }
+  const o=opts[c2],m=o[2]>0?sc(o[2]*8):(o[1]>0?sc(o[1]):0);
+  if(o[2]>0)p.happy+=2;
+  if(m)p.money+=m;
+  p.virtue+=o[2];
+  log(`🎁 ${p.name}のボーナスチャンス「${o[0]}」${o[2]>0?' ボーナス!':''} 徳${o[2]>0?'+':''}${o[2]}${m?' / +'+m+'万円':''}`);
+  if(!p.cpu){
+    beep(o[2]>=0?880:200,.15,o[2]>=0?'triangle':'sawtooth');
+    await showCard(o[2]>=0?'🌟':'😈',esc(o[0]),`<span class="${o[2]>=0?'plus':'minus'}">${o[2]>0?'🎁ボーナス! ':''}徳 ${o[2]>0?'+':''}${o[2]}</span> ${m?deltaText(m,0):''}`);
+  }
 }
 
 const bkPen=p=>p.bkCount*100+(p.bankrupt?100:0);
@@ -1300,7 +1341,7 @@ async function finishGame(){
       +'<div class="rr-top"><span class="medal">'+(i===ranked.length-1&&ranked.length>1?'🐢最下位':['🥇','🥈','🥉','4位'][i])+'</span>'
       +'<span class="dot" style="background:'+p.color+'"></span><b class="rn">'+esc(p.name)+(p.cpu?' 🤖':'')+'</b>'
       +'<span class="rsc">'+score(p)+'点</span></div>'
-      +'<div class="rr-sub">'+job+' / '+(p.spouse?'💒結婚':'独身')+' / '+(p.house?p.house[0]:'賃貸')+' / '+(p.dead?'☠'+p.deathAge+'歳で死去':p.goalRank?'🏖'+p.goalRank+'位で上がり':'⌛上がれず')+(p.bankrupt?' / 💥破産のまま':'')+'</div>'
+      +'<div class="rr-sub">'+job+' / '+(p.spouse?'💒結婚':'独身')+' / '+(p.house?p.house[0]:'賃貸')+' / '+(p.dead?'☠'+p.deathAge+'歳で死去':p.goalRank?'🏖'+p.goalRank+'位で上がり':'⌛上がれず')+(p.bankrupt?' / 💥破産のまま':'')+(G.course.ethics?' / 🧭徳'+p.virtue:'')+'</div>'
       +(i===ranked.length-1&&ranked.length>1?'<div class="rr-last">🐢 トップと'+(sc0-score(p))+'点差 — '+LAST_MSG[Math.floor(Math.random()*LAST_MSG.length)]+'</div>':'')+'<div class="bar">'+ps.filter(x=>x[2]>0).map(x=>'<i style="width:'+(x[2]/maxTotal*100)+'%;background:'+x[3]+'" title="'+x[1]+'"></i>').join('')+'</div>'
       +'<div class="chips">'+ps.map(x=>'<span class="chip" style="border-color:'+x[3]+'">'+x[0]+' '+x[1]+' <b class="'+(x[2]<0?'minus':'')+'">'+(x[2]<0?'':'+')+x[2]+'</b></span>').join('')+'</div>'
       +'</div>';
