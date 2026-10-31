@@ -37,8 +37,8 @@
   <button id="talk" type="button">押して話す</button>
   <div id="meter"><div id="bar"></div></div>
   <div class="row">
-    <label>音量 <span id="gv">3.0×</span></label>
-    <input id="gain" type="range" min="1" max="8" step="0.1" value="3">
+    <label>音量 <span id="gv">2.0×</span></label>
+    <input id="gain" type="range" min="1" max="5" step="0.1" value="2">
     <label class="check"><input id="hold" type="checkbox" checked> 押している間だけ出す</label>
     <label class="check"><input id="ec" type="checkbox" checked> ハウリング抑制(エコー除去)</label>
   </div>
@@ -65,10 +65,17 @@ async function setup() {
   src = ctx.createMediaStreamSource(stream);
   gainNode = ctx.createGain();
   gainNode.gain.value = 0;
+  // 強めに圧縮して、ピークを抑える(音割れ対策)
   const limiter = ctx.createDynamicsCompressor();
-  limiter.threshold.value = -12; limiter.ratio.value = 12;
+  limiter.threshold.value = -20; limiter.knee.value = 6; limiter.ratio.value = 20;
+  limiter.attack.value = 0.002; limiter.release.value = 0.12;
+  // 最終段のソフトクリップ(tanh)で、はみ出した分を滑らかに丸める
+  const shaper = ctx.createWaveShaper();
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh((i / 511.5 - 1) * 1.5) * 0.85;
+  shaper.curve = curve; shaper.oversample = '4x';
   analyser = ctx.createAnalyser(); analyser.fftSize = 256;
-  src.connect(gainNode); gainNode.connect(limiter); limiter.connect(ctx.destination);
+  src.connect(gainNode); gainNode.connect(limiter); limiter.connect(shaper); shaper.connect(ctx.destination);
   src.connect(analyser);
   const buf = new Uint8Array(analyser.fftSize);
   (function loop() {
