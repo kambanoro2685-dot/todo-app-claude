@@ -9,12 +9,12 @@
   --bg:#f1f7ff;--ink:#2b3442;--card:#fbfdff;--line:#cfe0f2;--accent:#ff7a3d;
   --gain:#c9f0c8;--loss:#ffd0cc;--happy:#ffd9ec;--disaster:#b9323a;--jump:#cfe6ff;--back:#e0d4ff;
   --skip:#e3e3e3;--again:#fff0a8;--battle:#ffc58a;--lucky:#f6c8ff;--item:#bff3f0;--none:#ffffff;
-  --payday:#a9e07a;--stop:#ffe27a;--news:#c8e6ff;--paper:#eef6ff;--roadO:#9b6b3a;--roadI:#fbefc9;
+  --payday:#a9e07a;--stop:#ffe27a;--news:#c8e6ff;--gamble:#ffc7c7;--stock:#c4f0d6;--paper:#eef6ff;--land:#dcefd4;--landEdge:#c2dfb8;--water:#c4e0f7;--waterEdge:#94c3ea;--roadO:#9b6b3a;--roadI:#fbefc9;
 }
 @media (prefers-color-scheme:dark){
   :root{--bg:#151c26;--ink:#e6eef8;--card:#1f2935;--line:#34475c;
   --gain:#2f5a30;--loss:#6a2e2a;--happy:#6b3552;--jump:#2c4b6f;--back:#463a73;--skip:#454545;
-  --again:#6b5d1c;--battle:#7b4a1d;--lucky:#5e2f6b;--item:#1f5a57;--none:#1f2935;--payday:#3f6b24;--stop:#7a6414;--news:#2a4a6b;--paper:#1b2531;--roadO:#1c140a;--roadI:#6a5535}
+  --again:#6b5d1c;--battle:#7b4a1d;--lucky:#5e2f6b;--item:#1f5a57;--none:#1f2935;--payday:#3f6b24;--stop:#7a6414;--news:#2a4a6b;--gamble:#6b2a2a;--stock:#1f5a3a;--paper:#1b2531;--land:#243a2d;--landEdge:#2f4c3a;--water:#21425f;--waterEdge:#2e5a82;--roadO:#1c140a;--roadI:#6a5535}
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Maru Gothic ProN","Yu Gothic","Meiryo",sans-serif;min-height:100vh}
@@ -55,14 +55,17 @@ button.sub{background:var(--card);color:var(--ink);border:2px solid var(--line)}
 .paper{fill:var(--paper)}.road-o{stroke:var(--roadO)}.road-i{stroke:var(--roadI)}
 .ttl{fill:var(--ink);font-family:"Yu Mincho","Hiragino Mincho ProN",serif;letter-spacing:.2em}.ttl2{fill:var(--ink);opacity:.7}
 .lbl{fill:var(--ink);stroke:var(--paper);stroke-width:5;paint-order:stroke}
-svg .sp{stroke:var(--ink);stroke-width:2.5}
+svg .sp{stroke:rgba(0,0,0,.25);stroke-width:1.5}
+.land{fill:var(--land);stroke:var(--landEdge)}.water{fill:var(--water);stroke:var(--waterEdge)}.card-bg{fill:var(--card)}
 svg .sp.t-gain{fill:var(--gain)}svg .sp.t-loss{fill:var(--loss)}svg .sp.t-happy{fill:var(--happy)}svg .sp.t-disaster{fill:var(--disaster)}
 svg .sp.t-jump{fill:var(--jump)}svg .sp.t-back{fill:var(--back)}svg .sp.t-skip{fill:var(--skip)}svg .sp.t-again{fill:var(--again)}
 svg .sp.t-battle{fill:var(--battle)}svg .sp.t-lucky{fill:var(--lucky)}svg .sp.t-item{fill:var(--item)}svg .sp.t-none{fill:var(--none)}
-svg .sp.t-payday{fill:var(--payday)}svg .sp.t-news{fill:var(--news)}
+svg .sp.t-payday{fill:var(--payday)}svg .sp.t-gamble{fill:var(--gamble)}svg .sp.t-stock{fill:var(--stock)}svg .sp.t-news{fill:var(--news)}
 svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg .sp.t-school,svg .sp.t-house{fill:var(--stop)}
 .cur-k{animation:kbob .55s infinite alternate}@keyframes kbob{to{transform:translateY(-9px)}}
-.t-news{background:var(--news)}
+.t-news{background:var(--news)}.t-gamble{background:var(--gamble)}.t-stock{background:var(--stock)}
+.bdg{font-size:.72rem;padding:0 6px;border-radius:999px;color:#fff;background:#d6322f;margin-left:4px}.bdg.top{background:#d4a017}
+.res-row.last{border-color:#2b2f36;background:#3b4048;color:#eef0f3}.pl.lastp{background:#3b4048;color:#eef0f3;border-color:#2b2f36}.rr-last{font-weight:700;color:#ffb4b0;font-size:.85rem;margin:2px 0 6px}
 #newsBox a{color:inherit}
 .tile{position:relative;aspect-ratio:1/1;border-radius:8px;border:1px solid rgba(0,0,0,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(.9rem,2.2vw,1.5rem);line-height:1;background:var(--none)}
 .tile .lb{font-size:clamp(.45rem,1vw,.65rem);margin-top:2px;font-weight:700;opacity:.85}
@@ -105,6 +108,15 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .modal .box{background:var(--card);border-radius:18px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
 .modal .opts{display:grid;gap:8px;margin-top:10px}
+.res{font-size:.9rem}.res-h{font-weight:900;font-size:1.05rem;margin-bottom:8px;text-align:center}
+.res-win{text-align:center;background:linear-gradient(135deg,#ffe9a8,#ffd1e3);color:#3a2e1f;border-radius:16px;padding:10px;margin-bottom:10px}
+.res-win .crown{font-size:2rem;line-height:1}.res-win .wn{font-weight:900;font-size:1.2rem}.res-win .ws{font-size:2.4rem;font-weight:900;line-height:1.1}.res-win .ws small{font-size:1rem}.res-win .wt{font-weight:700}
+.res-row{border:2px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px}.res-row.first{border-color:#d4a017}
+.rr-top{display:flex;align-items:center;gap:6px}.rr-top .rn{flex:1}.rsc{font-weight:900;font-size:1.2rem}.medal{font-size:1.1rem;min-width:1.8em;white-space:nowrap}
+.rr-sub{font-size:.78rem;opacity:.75;margin:2px 0 6px}
+.bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--line)}.bar i{display:block;height:100%}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.chip{border:2px solid;border-radius:999px;padding:1px 8px;font-size:.76rem;white-space:nowrap}
+.modal .box{max-width:600px}
 .rank{display:grid;grid-template-columns:2.2em 1fr auto;gap:6px;align-items:center;padding:6px 0;border-bottom:1px dotted var(--line)}
 .rank small{display:block;opacity:.7}
 </style>
@@ -188,10 +200,10 @@ const FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];
 /* ---------- データ ---------- */
 const TILE={
   start:['🚩','振り出し'],goal:['🏖','上がり'],school:['🎓','進学'],house:['🏠','家購入'],job:['💼','就職'],marry:['💒','結婚'],baby:['👶','出産'],
-  payday:['💴','給料日'],news:['📰','話題'],gain:['💰',''],loss:['💸',''],happy:['🃏','人生'],disaster:['⚡',''],jump:['⏩',''],
+  payday:['💴','給料日'],news:['📰','話題'],gamble:['🏇','ギャンブル'],stock:['📈','株'],gain:['💰',''],loss:['💸',''],happy:['🃏','人生'],disaster:['⚡',''],jump:['⏩',''],
   back:['⏪',''],skip:['💤',''],again:['🎲',''],battle:['⚔️',''],lucky:['🎰',''],item:['🎁',''],none:['',''],
 };
-const LEGEND={gain:'臨時収入',loss:'出費',happy:'人生カード',disaster:'大災難',jump:'ジャンプ',back:'もどる',skip:'一回休み',again:'もう一回',battle:'バトル',lucky:'ルーレット',item:'アイテム',payday:'給料日',news:'ニュース速報(話題)'};
+const LEGEND={gain:'臨時収入',loss:'出費',happy:'人生カード',disaster:'大災難',jump:'ジャンプ',back:'もどる',skip:'一回休み',again:'もう一回',battle:'バトル',lucky:'ルーレット',item:'アイテム',payday:'給料日',news:'ニュース速報(話題)',gamble:'ギャンブル',stock:'コツコツ株'};
 const COURSES=[
  {id:'calm',emoji:'🌤',name:'のんびり平穏コース',desc:'いい事が多めで安心。はじめての人におすすめ。',len:56,scale:.7,pay:1,
   w:{gain:4,loss:1,happy:5,disaster:0,jump:2,back:0,skip:1,again:2,battle:1,lucky:1,item:2,none:5}},
@@ -201,6 +213,8 @@ const COURSES=[
   w:{gain:4,loss:3,happy:1,disaster:2,jump:1,back:1,skip:1,again:2,battle:3,lucky:5,item:2,none:1}},
  {id:'black',emoji:'😈',name:'ブラック企業コース',desc:'出費・災難・一回休みの嵐。でも給料は倍!耐えきれるか。',len:70,scale:1.3,pay:2,
   w:{gain:2,loss:5,happy:1,disaster:3,jump:1,back:3,skip:3,again:1,battle:2,lucky:2,item:1,none:2}},
+ {id:'comeback',emoji:'🔥',name:'大逆転コース',desc:'ギャンブルとコツコツ株で一発逆転!最下位ほどギャンブルに勝ちやすい。',len:70,scale:1.5,pay:1.2,stocks:true,
+  w:{gain:2,loss:2,happy:1,disaster:1,jump:1,back:1,skip:1,again:2,battle:2,lucky:2,item:1,none:1,gamble:5,stock:5}},
  {id:'random',emoji:'🎯',name:'おまかせコース',desc:'上のコースからランダムで決定!',len:0,scale:0,pay:0,w:null},
 ];
 const JOBS=[
@@ -257,6 +271,8 @@ function renderSetup(){
     best=COURSES.filter(c=>b[c.id]!=null).map(c=>`${c.emoji}${b[c.id]}`).join(' / ');}catch(e){}
   $('#best').textContent=best?'🏆 自己ベスト: '+best:'';
 }
+// 開発中(localhost)は消音、公開サイトでは効果音オン
+$('#snd').checked=!['localhost','127.0.0.1','[::1]'].includes(location.hostname);
 buildWheel();
 renderSetup();
 
@@ -318,7 +334,7 @@ function genBoard(c,rng){
   return t;
 }
 function layout(n,rng){
-  const COLS=8,W=1000,rowH=135,rows=Math.ceil(n/COLS),H=170+rows*rowH+90,pts=[];
+  const COLS=8,W=1000,rowH=170,rows=Math.ceil(n/COLS),H=170+rows*rowH+90,pts=[];
   for(let i=0;i<n;i++){
     const r=Math.floor(i/COLS);let c=i%COLS;if(r%2)c=COLS-1-c;
     pts.push([150+c*(700/(COLS-1))+(rng()-.5)*14,H-90-r*rowH+Math.sin(c*.9+r)*14+(rng()-.5)*14]);
@@ -336,7 +352,7 @@ function startGame(){
   for(let i=0;i<total;i++){
     const cpu=i>=S.humans;
     players.push({id:i,name:cpu?CPU_NAMES[i-S.humans]:(S.names[i]||'プレイヤー'+(i+1)),cpu,color:COLORS[i],
-      pos:0,money:300,happy:0,college:false,house:null,houseFinal:0,cards:0,job:null,spouse:false,kids:0,items:{dice2:0,shield:0},skip:0,done:false,
+      pos:0,money:300,happy:0,college:false,house:null,houseFinal:0,cards:0,shares:0,cost:0,everLast:false,job:null,spouse:false,kids:0,items:{dice2:0,shield:0},skip:0,done:false,
       goalRank:0,bonus:0,timeover:false,flags:{school:false,job:false,marry:false,baby:false,house:false},last:3});
   }
   const types=genBoard(course,rng);
@@ -346,7 +362,8 @@ function startGame(){
   const BR=addBranches(types,L.pts,rng);const surf=makeSurf(BR.goal+1,rng);
   const topicAt=[];let k=0;types.forEach((t,i)=>{if(t==='news')topicAt[i]=topics[k++%topics.length]});
   const gid=(G?G.gid:0)+1;
-  G={gid,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
+  G={gid,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
+  G.stockHist=[G.stock];
   $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
   $('#courseName').textContent=`${course.emoji} ${course.name}`;
   $('#banner').classList.add('hidden');$('#log').innerHTML='';
@@ -359,6 +376,7 @@ function renderNewsBox(){
   if(S.mode==='news'&&NEWS.ok)b.innerHTML=`<b>📰 今日の話題</b> <small>${esc(NEWS.src)}</small><ol style="margin:4px 0 0;padding-left:1.3em">${NEWS.topics.slice(0,8).map(t=>`<li><a href="https://ja.wikipedia.org/wiki/${encodeURIComponent(t)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join('')}</ol>`;
   else if(S.mode==='news')b.innerHTML='<b>📰 時事モード</b><br><small>話題を取得できなかったため、内蔵の話題を使っています</small>';
   else b.innerHTML=`<b>📌 固定モード No.${S.fixedNo}</b><br><small>番号が同じなら、毎回同じ盤面・同じ話題です</small>`;
+  if(G&&G.stock!=null)b.innerHTML+=stockHtml();
 }
 
 /* ---------- 和風すごろく盤(SVG)とカメラ ---------- */
@@ -387,72 +405,194 @@ function focus(){
   $('#boardSvg').setAttribute('viewBox',`${cam.x} ${cam.y} ${cam.w} ${cam.h}`);
 })();
 
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;
+  const f=amt<0?0:255,p=Math.abs(amt);
+  return `rgb(${Math.round((f-r)*p+r)},${Math.round((f-g)*p+g)},${Math.round((f-b)*p+b)})`;
+}
+function blobPath(cx,cy,rx,ry,rng,k=10){
+  const q=[];for(let i=0;i<k;i++){const a=i/k*Math.PI*2,r=.72+rng()*.5;q.push([cx+Math.cos(a)*rx*r,cy+Math.sin(a)*ry*r])}
+  let d=`M${(q[0][0]+q[k-1][0])/2},${(q[0][1]+q[k-1][1])/2}`;
+  for(let i=0;i<k;i++){const p=q[i],n=q[(i+1)%k];d+=` Q${p[0]},${p[1]} ${(p[0]+n[0])/2},${(p[1]+n[1])/2}`}
+  return d+'Z';
+}
+function defsFor(svg){
+  const defs=el('defs',{},svg);
+  const f=el('filter',{id:'ds',x:'-30%',y:'-30%',width:'160%',height:'170%'},defs);
+  el('feDropShadow',{dx:0,dy:3,stdDeviation:2.4,'flood-color':'#000','flood-opacity':.35},f);
+  const gl=el('radialGradient',{id:'gl',cx:'35%',cy:'28%',r:'70%'},defs);
+  el('stop',{offset:'0','stop-color':'#fff','stop-opacity':.8},gl);el('stop',{offset:'.55','stop-color':'#fff','stop-opacity':.08},gl);el('stop',{offset:'1','stop-color':'#000','stop-opacity':.16},gl);
+  const tg=el('radialGradient',{id:'trg',cx:'35%',cy:'30%',r:'75%'},defs);
+  el('stop',{offset:'0','stop-color':'#8fcf72'},tg);el('stop',{offset:'1','stop-color':'#2f7a3f'},tg);
+  G.players.forEach(p=>{
+    const lg=el('linearGradient',{id:'pg'+p.id,x1:0,y1:0,x2:1,y2:1},defs);
+    el('stop',{offset:'0','stop-color':shade(p.color,.4)},lg);el('stop',{offset:'1','stop-color':shade(p.color,-.3)},lg);
+    const dg=el('linearGradient',{id:'pgd'+p.id,x1:0,y1:0,x2:1,y2:1},defs);
+    el('stop',{offset:'0','stop-color':shade(p.color,-.45)},dg);el('stop',{offset:'1','stop-color':shade(p.color,-.72)},dg);
+  });
+}
+function drawScenery(svg,roadSamples){
+  const {W,H}=G;
+  const dr=mulberry32(hash(G.board.join(',')));
+  const R=(a,b)=>a+dr()*(b-a),pk=a=>a[Math.floor(dr()*a.length)];
+  const area=W*H/1e6;
+  // 地図のグリッド
+  for(let x=100;x<W;x+=100)el('line',{x1:x,y1:0,x2:x,y2:H,stroke:'var(--ink)','stroke-opacity':.05},svg);
+  for(let y=100;y<H;y+=100)el('line',{x1:0,y1:y,x2:W,y2:y,stroke:'var(--ink)','stroke-opacity':.05},svg);
+  // 陸地
+  for(let i=0;i<Math.round(11*area);i++)el('path',{d:blobPath(R(0,W),R(200,H-60),R(160,280),R(110,190),dr),class:'land','stroke-width':3},svg);
+  // 湖
+  const lakes=[];
+  for(let i=0;i<Math.max(3,Math.round(3*area));i++){
+    const cx=R(80,W-80),cy=R(230,H-120),rx=R(55,95),ry=R(28,50);lakes.push([cx,cy,rx]);
+    el('path',{d:blobPath(cx,cy,rx,ry,dr,9),class:'water','stroke-width':3},svg);
+    for(let k=0;k<3;k++){const x=cx-rx*.4+k*rx*.35,y=cy-ry*.3+k*ry*.3;el('path',{d:`M${x},${y} q6,-5 12,0 t12,0`,fill:'none',stroke:'#fff','stroke-opacity':.7,'stroke-width':2,'stroke-linecap':'round'},svg)}
+  }
+  // 畑
+  for(let i=0;i<Math.round(5*area);i++){
+    const g=el('g',{transform:`translate(${R(80,W-160)},${R(220,H-120)}) rotate(${R(-14,14)})`,opacity:.9},svg);
+    const col=pk(['#e8e3a6','#cfe3a0','#ecd9a2','#d8e8b0']);
+    el('rect',{width:120,height:70,rx:4,fill:col,stroke:shade(col.length===7?col:'#cccc88',-.25),'stroke-width':1.5},g);
+    for(let k=1;k<7;k++)el('line',{x1:0,y1:k*10,x2:120,y2:k*10,stroke:'#000','stroke-opacity':.1,'stroke-width':2},g);
+  }
+  // 山
+  const mtn=(x,y,s)=>{
+    el('ellipse',{cx:x+8*s,cy:y+3,rx:40*s,ry:6*s,fill:'rgba(0,0,0,.14)'},svg);
+    el('polygon',{points:`${x-34*s},${y} ${x},${y-50*s} ${x},${y}`,fill:'#b2ac9f'},svg);
+    el('polygon',{points:`${x},${y-50*s} ${x+38*s},${y} ${x},${y}`,fill:'#8b857a'},svg);
+    el('polygon',{points:`${x-10*s},${y-36*s} ${x},${y-50*s} ${x+11*s},${y-35*s} ${x+5*s},${y-39*s} ${x},${y-33*s} ${x-5*s},${y-39*s}`,fill:'#fff'},svg);
+  };
+  for(let i=0;i<Math.round(4*area);i++){const x=R(100,W-100),y=R(250,H-120);mtn(x,y,1.1);mtn(x+34,y+8,.8);mtn(x-30,y+10,.7)}
+  // 森・町・木(道から離して置く)
+  const placed=[];
+  const spot=(minRoad,minOther)=>{
+    for(let t=0;t<60;t++){
+      const x=R(50,W-50),y=R(200,H-60);
+      if(roadSamples.some(q=>Math.hypot(q[0]-x,q[1]-y)<minRoad))continue;
+      if(placed.some(q=>Math.hypot(q[0]-x,q[1]-y)<minOther))continue;
+      if(lakes.some(q=>Math.hypot(q[0]-x,q[1]-y)<q[2]+20))continue;
+      placed.push([x,y]);return [x,y];
+    }
+    return null;
+  };
+  const tree=(x,y,s)=>{
+    el('ellipse',{cx:x+3*s,cy:y+8*s,rx:9*s,ry:3.5*s,fill:'rgba(0,0,0,.2)'},svg);
+    el('rect',{x:x-1.5*s,y:y,width:3*s,height:8*s,fill:'#6b4a2b'},svg);
+    el('circle',{cx:x,cy:y-4*s,r:10*s,fill:'url(#trg)'},svg);
+  };
+  const house=(x,y)=>{
+    const w=16+dr()*10,h=12+dr()*6,wall=pk(['#f4efe6','#f7d9b5','#ecd0d0','#d9e6f2','#f2e7a8']),roof=pk(['#c0463a','#4a6fa5','#7a5b42','#3e7a4d']);
+    el('polygon',{points:`${x-w/2},${y+h/2} ${x+w/2+7},${y+h/2} ${x+w/2+2},${y-h/2} ${x-w/2},${y-h/2}`,fill:'rgba(0,0,0,.16)'},svg);
+    el('rect',{x:x-w/2,y:y-h/2,width:w,height:h,fill:wall,stroke:'#0003','stroke-width':.8},svg);
+    el('polygon',{points:`${x-w/2-2},${y-h/2} ${x},${y-h/2-10} ${x+w/2+2},${y-h/2}`,fill:roof},svg);
+    el('rect',{x:x-w/2+3,y:y-2,width:5,height:5,fill:'#9fd0ff'},svg);
+    el('rect',{x:x+w/2-8,y:y-1,width:5,height:h/2+1,fill:'#7a5b42'},svg);
+  };
+  for(let i=0;i<Math.round(6*area);i++){const c=spot(55,90);if(!c)continue;for(let k=0;k<8;k++)tree(c[0]+R(-34,34),c[1]+R(-22,22),R(.8,1.25))}
+  for(let i=0;i<Math.round(5*area);i++){const c=spot(55,90);if(!c)continue;for(let k=0;k<6;k++)house(c[0]+(k%3-1)*26,c[1]+(k<3?-14:14))}
+  for(let i=0;i<Math.round(20*area);i++){const c=spot(46,30);if(c)tree(c[0],c[1],R(.8,1.2))}
+}
+
 function buildBoard(){
   const svg=$('#boardSvg');svg.innerHTML='';
   const {W,H,pts}=G;
+  defsFor(svg);
   el('rect',{x:0,y:0,width:W,height:H,class:'paper'},svg);
-  el('rect',{x:14,y:14,width:W-28,height:H-28,fill:'none',stroke:'var(--ink)','stroke-opacity':.45,'stroke-width':4,rx:10},svg);
+  // 道の見張り点(景色を道から離すため)
+  const samples=pts.slice();
+  for(let i=0;i<=G.goal-1;i++)samples.push([(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2]);
+  G.branches.forEach(br=>{for(let i=0;i<br.ids.length-1;i++){const a=pts[br.ids[i]],b=pts[br.ids[i+1]];samples.push([(a[0]+b[0])/2,(a[1]+b[1])/2])}});
+  drawScenery(svg,samples);
+  el('rect',{x:14,y:14,width:W-28,height:H-28,fill:'none',stroke:'var(--ink)','stroke-opacity':.5,'stroke-width':4,rx:10},svg);
   el('rect',{x:26,y:26,width:W-52,height:H-52,fill:'none',stroke:'var(--ink)','stroke-opacity':.25,'stroke-width':1.5,rx:6},svg);
-  const dr=mulberry32(hash(G.course.id)+3);
-  for(let i=0;i<14;i++)el('ellipse',{cx:dr()*W,cy:200+dr()*(H-260),rx:60+dr()*80,ry:10+dr()*10,fill:'var(--ink)','fill-opacity':.06},svg);
-  const dec=['🌲','⛩','🌸','🎏','🗻','🌊','🏯','🍡'];
-  for(let i=0;i<24;i++){const x=i%2?40+dr()*60:W-40-dr()*60;el('text',{x,y:210+dr()*(H-300),'font-size':34,'text-anchor':'middle',opacity:.35},svg,dec[Math.floor(dr()*dec.length)])}
-  el('text',{x:W/2,y:105,'text-anchor':'middle','font-size':72,'font-weight':900,class:'ttl'},svg,'人生双六');
-  el('text',{x:W/2,y:148,'text-anchor':'middle','font-size':26,class:'ttl2'},svg,`${G.course.emoji}${G.course.name}`);
+  // タイトル札と方位
+  const t=el('g',{filter:'url(#ds)'},svg);
+  el('rect',{x:W/2-200,y:46,width:400,height:116,rx:16,class:'card-bg'},t);
+  el('rect',{x:W/2-192,y:54,width:384,height:100,rx:11,fill:'none',stroke:'var(--ink)','stroke-opacity':.35,'stroke-width':1.5},t);
+  el('text',{x:W/2,y:108,'text-anchor':'middle','font-size':58,'font-weight':900,class:'ttl'},svg,'人生双六');
+  el('text',{x:W/2,y:142,'text-anchor':'middle','font-size':22,class:'ttl2'},svg,`${G.course.emoji} ${G.course.name}`);
+  const cx=W-100,cy=106,c=el('g',{filter:'url(#ds)'},svg);
+  el('circle',{cx,cy,r:40,class:'card-bg'},c);el('circle',{cx,cy,r:33,fill:'none',stroke:'var(--ink)','stroke-opacity':.4},c);
+  el('polygon',{points:`${cx},${cy-34} ${cx+8},${cy} ${cx},${cy+34} ${cx-8},${cy}`,fill:'#d6453a'},c);
+  el('polygon',{points:`${cx-34},${cy} ${cx},${cy-8} ${cx+34},${cy} ${cx},${cy+8}`,fill:'#46505e'},c);
+  el('text',{x:cx,y:cy-42,'text-anchor':'middle','font-size':15,'font-weight':900,fill:'var(--ink)'},svg,'N');
   // 道(種類ごとに描き分け)
+  const sh=(d,w)=>el('path',{d,fill:'none',stroke:'rgba(0,0,0,.24)','stroke-width':w+4,'stroke-linecap':'round',transform:'translate(2,4)'},svg);
+  const P=(d,col,w,extra)=>el('path',Object.assign({d,fill:'none',stroke:col,'stroke-width':w,'stroke-linecap':'round'},extra||{}),svg);
   const SURF={
-    asphalt:(d)=>{el('path',{d,fill:'none',stroke:'#4b5058','stroke-width':22,'stroke-linecap':'round'},svg);el('path',{d,fill:'none',stroke:'#f4e6a0','stroke-width':2,'stroke-dasharray':'8 8'},svg)},
-    dirt:(d)=>{el('path',{d,fill:'none',stroke:'#7a5530','stroke-width':22,'stroke-linecap':'round'},svg);el('path',{d,fill:'none',stroke:'#c7a06a','stroke-width':15,'stroke-linecap':'round'},svg)},
-    rail:(d)=>{el('path',{d,fill:'none',stroke:'#3d3d3d','stroke-width':14,'stroke-linecap':'round'},svg);el('path',{d,fill:'none',stroke:'#fff','stroke-width':6,'stroke-dasharray':'7 7'},svg)},
+    asphalt:d=>{sh(d,24);P(d,'#e1e3e7',24);P(d,'#50555e',21);P(d,'#f6efb8',1.8,{'stroke-dasharray':'10 9','stroke-linecap':'butt'})},
+    dirt:d=>{sh(d,24);P(d,'#86663b',24);P(d,'#c9a66f',19);P(d,'#a98456',11,{'stroke-dasharray':'1.5 6'});P(d,'#e3cb98',1.5,{'stroke-dasharray':'12 10','stroke-linecap':'butt'})},
+    rail:d=>{sh(d,18);P(d,'#a39d92',18);P(d,'#4f3b28',15,{'stroke-dasharray':'3 5.5','stroke-linecap':'butt'});P(d,'#dfe2e6',9,{'stroke-linecap':'butt'});P(d,'#8b7a64',5,{'stroke-dasharray':'3 5.5','stroke-linecap':'butt'})},
   };
-  const seg=(arr,i)=>{
-    const P=k=>arr[Math.max(0,Math.min(arr.length-1,k))];
-    const a=P(i-1),b=P(i),c=P(i+1),e=P(i+2);
-    return `M${b[0]},${b[1]} C${b[0]+(c[0]-a[0])/6},${b[1]+(c[1]-a[1])/6} ${c[0]-(e[0]-b[0])/6},${c[1]-(e[1]-b[1])/6} ${c[0]},${c[1]}`;
+  const segInfo=(arr,i)=>{
+    const Q=k=>arr[Math.max(0,Math.min(arr.length-1,k))];
+    const a=Q(i-1),b=Q(i),c=Q(i+1),e=Q(i+2);
+    const p1=[b[0]+(c[0]-a[0])/6,b[1]+(c[1]-a[1])/6],p2=[c[0]-(e[0]-b[0])/6,c[1]-(e[1]-b[1])/6];
+    return {d:`M${b[0]},${b[1]} C${p1[0]},${p1[1]} ${p2[0]},${p2[1]} ${c[0]},${c[1]}`,
+      mid:[(b[0]+3*p1[0]+3*p2[0]+c[0])/8,(b[1]+3*p1[1]+3*p2[1]+c[1])/8],dir:[c[0]+p2[0]-p1[0]-b[0],c[1]+p2[1]-p1[1]-b[1]]};
   };
+  const vehicles=[];
   const mainPts=pts.slice(0,G.goal+1);
-  for(let i=0;i<mainPts.length-1;i++)SURF[G.surf[i]](seg(mainPts,i));
-  G.branches.forEach(br=>{const arr=br.ids.map(id=>pts[id]);for(let i=0;i<arr.length-1;i++)SURF[br.surf](seg(arr,i))});
+  for(let i=0;i<mainPts.length-1;i++){const s=segInfo(mainPts,i);SURF[G.surf[i]](s.d);s.surf=G.surf[i];s.i=i;vehicles.push(s)}
+  G.branches.forEach(br=>{const arr=br.ids.map(id=>pts[id]);for(let i=0;i<arr.length-1;i++){const s=segInfo(arr,i);SURF[br.surf](s.d);s.surf=br.surf;s.i=-1;vehicles.push(s)}});
+  // 乗り物
+  const vr=mulberry32(hash(G.board.join('|')));
+  const VEH={asphalt:['🚗','🚙','🚌','🚚','🚓','🚕'],dirt:['🚜','🛻','🐎'],rail:['🚆','🚃','🚂']};
+  vehicles.forEach((s,k)=>{
+    if(s.i>=0&&(s.i<2||s.i>G.goal-3))return;
+    if(vr()>.22)return;
+    const dx=s.dir[0],dy=s.dir[1];if(Math.abs(dx)<Math.abs(dy)*1.2)return;
+    let ang=Math.atan2(dy,dx)*180/Math.PI,sx=1;
+    if(dx>0){sx=-1}else ang-=180;
+    const g=el('g',{transform:`translate(${s.mid[0]},${s.mid[1]}) rotate(${ang}) scale(${sx},1)`},svg);
+    el('text',{x:0,y:1,'text-anchor':'middle','dominant-baseline':'central','font-size':s.surf==='rail'?26:22,filter:'url(#ds)'},g,pk0(vr,VEH[s.surf]));
+  });
   // マス
   G.board.forEach((type,i)=>{
-    const [x,y]=pts[i],R=radius(type),[em,lb]=TILE[type];
-    const g=el('g',{transform:`translate(${x},${y})`},svg);
+    const [x,y]=pts[i],Rr=radius(type),[em,lb]=TILE[type];
     const big=STOPS.includes(type)||type==='goal'||type==='start';
-    if(big)el('circle',{r:R+6,fill:'none',stroke:'#c9a227','stroke-width':3},g);
-    el('circle',{r:R,class:'sp t-'+type},g);
-    if(em)el('text',{x:0,y:1,'text-anchor':'middle','dominant-baseline':'central','font-size':R*1.05},g,em);
-    else el('text',{x:0,y:1,'text-anchor':'middle','dominant-baseline':'central','font-size':12,fill:'var(--ink)',opacity:.45},g,i);
-    if(lb)el('text',{x:0,y:R+20,'text-anchor':'middle','font-size':big?18:13,'font-weight':900,class:'lbl'},g,lb);
+    const g=el('g',{transform:`translate(${x},${y})`,filter:'url(#ds)'},svg);
+    if(big)el('circle',{r:Rr+7,fill:'#fff6cf',stroke:'#c9a227','stroke-width':3},g);
+    el('circle',{r:Rr+3,fill:'#fff',stroke:'var(--ink)','stroke-opacity':.45,'stroke-width':1.2},g);
+    el('circle',{r:Rr,class:'sp t-'+type},g);
+    el('circle',{r:Rr,fill:'url(#gl)'},g);
+    if(em)el('text',{x:0,y:1,'text-anchor':'middle','dominant-baseline':'central','font-size':Rr*1.05},g,em);
+    else el('text',{x:0,y:1,'text-anchor':'middle','dominant-baseline':'central','font-size':12,fill:'var(--ink)',opacity:.5},g,i);
+    if(lb)el('text',{x:0,y:Rr+22,'text-anchor':'middle','font-size':big?18:13,'font-weight':900,class:'lbl'},svg===null?g:g,lb);
   });
-  G.branches.forEach(br=>{const q=pts[br.ids[1]];el('text',{x:q[0],y:q[1]-30,'text-anchor':'middle','font-size':14,'font-weight':900,class:'lbl'},svg,br.kind==='short'?'⚡近道':'🌿寄り道')});
+  G.branches.forEach(br=>{const q=pts[br.ids[1]];el('text',{x:q[0],y:q[1]-32,'text-anchor':'middle','font-size':14,'font-weight':900,class:'lbl'},svg,br.kind==='short'?'⚡近道':'🌿寄り道')});
   G.tokLayer=el('g',{},svg);
   camOverview();Object.assign(cam,camT);
   renderTokens();
 }
+const pk0=(r,a)=>a[Math.floor(r()*a.length)];
 function renderTokens(){
   if(!G||!G.tokLayer)return;
   const L=G.tokLayer;L.innerHTML='';
   const byPos={};G.players.forEach(p=>{(byPos[p.pos]=byPos[p.pos]||[]).push(p)});
   for(const pos in byPos){
-    const arr=byPos[pos],[x,y]=G.pts[pos],R=radius(G.board[pos]);
+    const arr=byPos[pos],[x,y]=G.pts[pos],Rr=radius(G.board[pos]);
     arr.forEach((p,k)=>{
-      const g=el('g',{transform:`translate(${x+(k-(arr.length-1)/2)*30},${y-R-10})`},L);
+      const g=el('g',{transform:`translate(${x+(k-(arr.length-1)/2)*28},${y-Rr-8})`},L);
+      el('ellipse',{cx:0,cy:15,rx:13,ry:4.5,fill:'rgba(0,0,0,.35)'},g);
       const inner=el('g',{class:(p.id===G.turn&&!p.done)?'cur-k':''},g);
-      el('path',{d:'M0,-20 L14,-10 L17,15 L-17,15 L-14,-10 Z',fill:p.color,stroke:'#fff','stroke-width':3,'stroke-linejoin':'round'},inner);
-      el('text',{x:0,y:3,'text-anchor':'middle','dominant-baseline':'central','font-size':18,'font-weight':900,fill:'#fff'},inner,p.cpu?p.name.slice(3,4):[...p.name][0]);
+      el('path',{d:'M-13,15 Q-12,3 -5,-3 A8,8 0 1 1 5,-3 Q12,3 13,15 Z',fill:`url(#${showLast(p)?'pgd':'pg'}${p.id})`,stroke:'#fff','stroke-width':2,'stroke-linejoin':'round'},inner);
+      el('ellipse',{cx:-2.5,cy:-12,rx:2.6,ry:1.8,fill:'#fff','fill-opacity':.6},inner);
+      el('text',{x:0,y:7,'text-anchor':'middle','dominant-baseline':'central','font-size':13,'font-weight':900,fill:'#fff'},inner,p.cpu?p.name.slice(3,4):[...p.name][0]);
     });
   }
   focus();
 }
+
 function renderPlayers(){
   const box=$('#players');box.innerHTML='';
   G.players.forEach(p=>{
-    const d=document.createElement('div');d.className='pl'+(p.id===G.turn&&!p.done?' cur':'')+(p.done?' done':'');
+    const d=document.createElement('div');d.className='pl'+(showLast(p)?' lastp':'')+(p.id===G.turn&&!p.done?' cur':'')+(p.done?' done':'');
     const job=p.job?`${p.job[1]}${p.job[0]}`:'無職';
-    d.innerHTML=`<div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${p.cpu?' 🤖':''}${p.goalRank?` 🏁${p.goalRank}位`:p.timeover?' ⌛':''}</div>
+    d.innerHTML=`<div class="nm"><span class="dot" style="background:${p.color}"></span>${p.name}${p.cpu?' 🤖':''} ${rankBadge(p)}${p.goalRank?` 🏁${p.goalRank}位`:p.timeover?' ⌛':''}</div>
     <div class="st"><span>💰 ${fmt(p.money)}</span><span>😊 ${p.happy}</span>
     <span>${job}</span><span>🚗${p.spouse?`<b class="peg" style="background:${p.color}"></b>`:''}${'<b class="peg kid"></b>'.repeat(Math.min(p.kids,6))}</span>
-    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}</span><span>📍上がりまで${G.rem[p.pos]}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span></div>`;
+    <span>🎡×${p.items.dice2} 🛡×${p.items.shield} 🃏×${p.cards}${G.stock!=null?' 📈×'+p.shares:''}</span><span>📍上がりまで${G.rem[p.pos]}</span><span>${p.college?'🎓大卒':'高卒'} ${p.house?p.house[0]:''}</span></div>`;
     box.appendChild(d);
   });
 }
@@ -538,7 +678,7 @@ function addBranches(types,pts,rng){
     if(k>=want)break;const b=a+3;if(!free(a,b))continue;
     const s1=types.length;
     types.push(rp(['gain','item','happy','lucky','news']),rp(['gain','happy','again','news','item']),rp(['happy','battle','loss','lucky','gain']));
-    [.2,.5,.8].forEach(f=>pts.push([pts[a][0]+(pts[b][0]-pts[a][0])*f,pts[a][1]+(pts[b][1]-pts[a][1])*f-64*Math.sin(Math.PI*f)]));
+    [.2,.5,.8].forEach(f=>pts.push([pts[a][0]+(pts[b][0]-pts[a][0])*f,pts[a][1]+(pts[b][1]-pts[a][1])*f-80*Math.sin(Math.PI*f)]));
     add(a,b,[s1,s1+1,s1+2],'detour',rp(['asphalt','rail']));k++;
   }
   // ゴールまでの残りマス数
@@ -564,6 +704,7 @@ async function moveForward(p,n){
     if(nx===undefined||nx===G.goal)break;
     p.pos=nx;renderTokens();beep(500+i*20,.05);await sleep(130);
     if(G.board[p.pos]==='payday'&&p.job){const sal=salary(p);gainMoney(p,sal);log(`💴 ${p.name}は給料日を通過 +${sal}万円`)}
+    if(G.board[p.pos]==='payday')dividend(p);
   }
   renderPlayers();
 }
@@ -594,9 +735,93 @@ async function mainLoop(){
   }
   await finishGame();
 }
+/* ---------- 順位・株・ギャンブル ---------- */
+const LAST_MSG=['人生はこれから!逆転のチャンスはまだある!','ドンマイ!次はきっと上位だ!','のびしろ最強。伝説はここから!','最下位でも、笑顔ならいい人生!'];
+function liveScore(p){return p.money+p.happy*5+p.cards*30+p.kids*40+(p.house?p.house[1]:0)+p.bonus+p.shares*(G.stock||0)}
+function showLast(p){return G.players.length>1&&G.round>=2&&isLast(p)}
+function isLast(p){const a=G.players;return a.length>1&&a.every(q=>q===p||liveScore(q)>liveScore(p))}
+function rankBadge(p){
+  const a=G.players;if(a.length<2||G.round<2)return '';
+  const s=liveScore(p);
+  if(a.every(q=>q===p||liveScore(q)<s))return '<span class="bdg top">👑トップ</span>';
+  if(isLast(p))return '<span class="bdg">🐢最下位</span>';
+  return '';
+}
+function onRound(){
+  if(G.round>=3)G.players.forEach(q=>{if(isLast(q))q.everLast=true});
+  if(G.stock==null)return;
+  const old=G.stock;let f=1+Math.random()*.26-.1;
+  const ev=Math.random();
+  if(ev<.06){f=.6;log('📉 株価暴落!みんなの株が大ダメージ…')}
+  else if(ev>.94){f=1.4;log('📈 株価急騰!持ち株が大きく値上がり!')}
+  G.stock=Math.max(10,Math.round(G.stock*f/5)*5);
+  G.stockHist.push(G.stock);
+  renderNewsBox();
+}
+function dividend(p){
+  if(G.stock==null||p.shares<=0)return;
+  const d=Math.max(5,Math.round(p.shares*G.stock*.06/5)*5);
+  gainMoney(p,d);log(`📈 ${p.name}に配当金 +${d}万円(${p.shares}株)`);
+}
+function stockHtml(){
+  const h=G.stockHist,mx=Math.max(...h),mn=Math.min(...h),w=150,ht=34;
+  const pts=h.map((v,i)=>(h.length>1?i/(h.length-1)*w:0)+','+(ht-(mx===mn?ht/2:(v-mn)/(mx-mn)*(ht-4))-2)).join(' ');
+  const prev=h.length>1?h[h.length-2]:G.stock,up=G.stock>=prev;
+  return '<div style="margin-top:8px"><b>📈 株価 '+G.stock+'万円/株</b> <span class="'+(up?'plus':'minus')+'">'+(up?'▲':'▼')+Math.abs(G.stock-prev)+'</span>'
+    +'<svg viewBox="0 0 '+w+' '+ht+'" width="100%" height="40" preserveAspectRatio="none"><polyline points="'+pts+'" fill="none" stroke="'+(up?'#1b9a3a':'#d6322f')+'" stroke-width="2"/></svg></div>';
+}
+
+async function gamble(p){
+  const boost=isLast(p)?.15:0;
+  const opts=[['小',sc(50),.5,2],['中',sc(150),.35,3],['大',sc(300),.2,6]];
+  let i;
+  if(p.cpu){
+    const behind=isLast(p)||liveScore(p)<G.players.reduce((a,q)=>a+liveScore(q),0)/G.players.length;
+    i=behind?2:(Math.random()<.5?1:0);
+    if(Math.random()<.15)i=-1;
+  }else{
+    i=await modal('<h2>🏇 ギャンブルマス!</h2><div>賭け金をえらんでね。'+(boost?'<b>最下位ボーナスで勝率+15%!</b>':'')+'</div>',
+      [...opts.map(o=>o[0]+': '+o[1]+'万円 → 勝率'+Math.round((o[2]+boost)*100)+'%で'+o[3]+'倍'),'やめておく']);
+  }
+  if(i<0||i>=3){log(`🏇 ${p.name}は勝負を見送った`);await showCard('🏇','勝負を見送った');return}
+  const [nm,bet,wr,mul]=opts[i];
+  await showCard('🏇',`${esc(p.name)}は「${nm}」に${bet}万円!`,'勝負…!');
+  if(Math.random()<wr+boost){
+    const g=bet*(mul-1);gainMoney(p,g);jingle([784,988,1175,1568]);
+    log(`🎉 ${p.name}は大当たり! +${g}万円${boost?'(最下位ボーナス)':''}`);await showCard('🎉','大当たり!',deltaText(g,0));
+  }else{
+    const l=loseMoney(p,bet);beep(150,.3,'sawtooth');
+    log(`💥 ${p.name}は外れ… ${l?'-'+l+'万円':'(防いだ)'}`);await showCard('💥','はずれ…',l?deltaText(-l,0):'🛡 シールドで防いだ!');
+  }
+}
+
+async function stockTile(p){
+  if(G.stock==null)return;
+  const pr=G.stock,avg=p.shares?Math.round(p.cost/p.shares):0;
+  let act;
+  if(p.cpu){
+    if(p.shares>0&&pr>=avg*1.35&&Math.random()<.7)act='sell';
+    else if(p.money>pr*4+200)act='buy2';
+    else if(p.money>pr*2+80)act='buy1';
+    else act='skip';
+  }else{
+    const labels=['🛒 1株買う('+pr+'万円)','🛒 3株買う('+pr*3+'万円)'],keys=['buy1','buy3'];
+    if(p.shares>0){labels.push('💰 全部売る('+p.shares*pr+'万円)');keys.push('sell')}
+    labels.push('見送る');keys.push('skip');
+    act=keys[await modal('<h2>📈 コツコツ株マス</h2><div>株価 <b>'+pr+'万円/株</b> ・ 持ち株 '+p.shares+'株'+(p.shares?'(平均取得 '+avg+'万円)':'')+'<br><small>給料日に配当金(株価の約6%)がもらえます。最後は株の評価額も得点になります。</small></div>',labels)];
+  }
+  if(act==='sell'){
+    const g=p.shares*pr,pl=g-p.cost;gainMoney(p,g);log(`📈 ${p.name}は${p.shares}株を売却 +${g}万円(損益${pl>=0?'+':''}${pl})`);
+    await showCard('💰','株を売却!',deltaText(g,0));p.shares=0;p.cost=0;
+  }else if(act.startsWith('buy')){
+    const n=act==='buy3'?3:act==='buy2'?2:1,c=n*pr;p.money-=c;p.shares+=n;p.cost+=c;
+    log(`📈 ${p.name}は株を${n}株購入 -${c}万円`);await showCard('📈',`${n}株を購入!`,deltaText(-c,0));
+  }else{log(`📈 ${p.name}は株を見送った`)}
+}
+
 function nextTurn(){
   let n=0;
-  do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0)G.round++;n++}while(G.players[G.turn].done&&n<10);
+  do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0){G.round++;onRound()}n++}while(G.players[G.turn].done&&n<10);
 }
 
 function waitRoll(p){
@@ -651,7 +876,7 @@ async function playTurn(p){
     if(p.pos===G.goal){await reachGoal(p);return}
     if(t==='payday'){
       const j=p.job;const sal=salary(p);
-      gainMoney(p,sal);renderPlayers();jingle([660,880]);
+      gainMoney(p,sal);dividend(p);renderPlayers();jingle([660,880]);
       log(`💴 ${p.name}は給料日! +${sal}万円${j?'':'(無職のバイト代)'}`);
       if(s<total-1)await showCardQuick('💴',`給料日! +${sal}万円`);
     }
@@ -766,6 +991,8 @@ async function resolveTile(p,t){
     case 'item':{
       const k=giveItem(p);log(`🎁 ${p.name}は${k}をゲット`);jingle([880,1175]);await showCard('🎁',`${k} をゲット!`);break;
     }
+    case 'gamble':await gamble(p);break;
+    case 'stock':await stockTile(p);break;
     case 'news':{
       const raw=G.topicAt[p.pos]||'世の中の動き',tp=esc(raw);
       if(Math.random()<.6){const m=sc(60);gainMoney(p,m);p.happy+=3;log(`📰 ${p.name}: 話題『${raw}』に乗って情報通に! +${m}万円`);jingle([660,880]);await showCard('📰',`ニュース速報『${tp}』`,'話題に乗って情報通に! '+deltaText(m,3))}
@@ -820,7 +1047,7 @@ async function roulette(p){
 }
 
 /* ---------- 結果 ---------- */
-function score(p){return p.money+p.happy*5+p.bonus+p.houseFinal+p.cards*30+p.kids*40}
+function score(p){return p.money+p.happy*5+p.bonus+p.houseFinal+p.cards*30+p.kids*40+p.shares*(G.stock||0)}
 const TITLES=['人生の大勝ち組 👑','堂々たる成功者 🌟','そこそこ幸せ 😊','苦労人 💪','波瀾万丈すぎた人生 🌪'];
 async function finishGame(){
   $('#rollBtn').disabled=true;$('#dblBtn').classList.add('hidden');
@@ -832,16 +1059,27 @@ async function finishGame(){
   const top=ranked[0];
   const newRec=top&&(best[G.course.id]==null||score(top)>best[G.course.id]);
   if(newRec){best[G.course.id]=score(top);try{localStorage.setItem('sugoroku-best',JSON.stringify(best))}catch(e){}}
-  let html=`<h2>🎊 老後の精算・けっか発表 — ${G.course.emoji}${G.course.name}</h2>`;
-  ranked.forEach((p,i)=>{
-    const job=p.job?`${p.job[1]}${p.job[0]}`:'無職';
-    html+=`<div class="rank"><b>${['🥇','🥈','🥉','4️⃣'][i]}</b>
-    <div><span class="dot" style="display:inline-block;background:${p.color}"></span> ${p.name}${p.cpu?' 🤖':''}
-    <small>${job} / ${p.spouse?'💒':'独身'} / 👶×${p.kids}(+${p.kids*40}) / 💰${fmt(p.money)} / ${p.house?p.house[0]+'売却'+p.houseFinal:'賃貸'} / 🃏×${p.cards}(+${p.cards*30}) / 😊${p.happy} / ${p.goalRank?`🏖${p.goalRank}位(+${p.bonus})`:'⌛未到着'}</small></div>
-    <b>${score(p)}点</b></div>`;
-  });
+  const parts=p=>[
+    ['💰','お金',p.money,'#4aa8ff'],['🏠','家の売却',p.houseFinal,'#3fae6a'],['👶','子ども',p.kids*40,'#ff8fb8'],
+    ['🃏','人生カード',p.cards*30,'#a77be0'],['😊','しあわせ',p.happy*5,'#ffb13d'],['🏖','到着ボーナス',p.bonus,'#d4a017'],...(G.stock!=null?[['📈','株の評価額',p.shares*G.stock,'#2fbf9b']]:[])];
+  const maxTotal=Math.max(1,...ranked.map(p=>parts(p).reduce((a,x)=>a+Math.max(0,x[2]),0)));
   const sc0=score(top);
-  html+=`<p style="margin:10px 0 0">👑 ${top.name} の称号: <b>${TITLES[sc0>=1200?0:sc0>=800?1:sc0>=500?2:sc0>=250?3:4]}</b>${newRec?' 🏆自己ベスト更新!':''}</p>`;
+  const title=TITLES[sc0>=1200?0:sc0>=800?1:sc0>=500?2:sc0>=250?3:4];
+  let html='<div class="res"><div class="res-h">🎊 老後の精算 ' + G.course.emoji + G.course.name + '</div>'
+    +'<div class="res-win"><div class="crown">👑</div><div class="wn">'+esc(top.name)+(top.cpu?' 🤖':'')+'</div><div class="ws">'+sc0+'<small>点</small></div><div class="wt">'+title+(newRec?' ・🏆自己ベスト更新!':'')+'</div>'+(top.everLast?'<div class="wt">🔥大逆転優勝!(途中で最下位だった人が優勝)</div>':'')+'</div>';
+  ranked.forEach((p,i)=>{
+    const job=p.job?p.job[1]+p.job[0]:'無職';
+    const ps=parts(p);
+    html+='<div class="res-row'+(i===0?' first':'')+(i===ranked.length-1&&ranked.length>1?' last':'')+'">'
+      +'<div class="rr-top"><span class="medal">'+(i===ranked.length-1&&ranked.length>1?'🐢最下位':['🥇','🥈','🥉','4位'][i])+'</span>'
+      +'<span class="dot" style="background:'+p.color+'"></span><b class="rn">'+esc(p.name)+(p.cpu?' 🤖':'')+'</b>'
+      +'<span class="rsc">'+score(p)+'点</span></div>'
+      +'<div class="rr-sub">'+job+' / '+(p.spouse?'💒結婚':'独身')+' / '+(p.house?p.house[0]:'賃貸')+' / '+(p.goalRank?'🏖'+p.goalRank+'位で上がり':'⌛上がれず')+'</div>'
+      +(i===ranked.length-1&&ranked.length>1?'<div class="rr-last">🐢 トップと'+(sc0-score(p))+'点差 — '+LAST_MSG[Math.floor(Math.random()*LAST_MSG.length)]+'</div>':'')+'<div class="bar">'+ps.filter(x=>x[2]>0).map(x=>'<i style="width:'+(x[2]/maxTotal*100)+'%;background:'+x[3]+'" title="'+x[1]+'"></i>').join('')+'</div>'
+      +'<div class="chips">'+ps.map(x=>'<span class="chip" style="border-color:'+x[3]+'">'+x[0]+' '+x[1]+' <b class="'+(x[2]<0?'minus':'')+'">'+(x[2]<0?'':'+')+x[2]+'</b></span>').join('')+'</div>'
+      +'</div>';
+  });
+  html+='</div>';
   const i=await modal(html,['🔁 もう一度(同じ設定)','⚙ 設定にもどる']);
   if(i===0)startGame();else toTitle();
 }

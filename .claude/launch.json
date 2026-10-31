@@ -1,0 +1,45 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "imakuite-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "imakuite/app",
+        "run",
+        "web",
+        "--",
+        "--port",
+        "8081"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "imakuite-ramen-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "imakuite-ramen/app",
+        "run",
+        "web",
+        "--",
+        "--port",
+        "8082"
+      ],
+      "port": 8082
+    },
+    {
+      "name": "megaphone",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "megaphone", "-l", "8083"],
+      "port": 8083
+    },
+    {
+      "name": "sugoroku",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "sugoroku", "-l", "8084"],
+      "port": 8084
+    }
+  ]
+}
