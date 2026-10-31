@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>メガホン</title>
+<style>
+  :root { --bg:#fff7ed; --fg:#1f2937; --accent:#f97316; --accent-on:#ef4444; --muted:#6b7280; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#1c1917; --fg:#f5f5f4; --muted:#a8a29e; }
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+    font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  main { min-height:100%; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:20px; padding:24px 16px; }
+  h1 { margin:0; font-size:1.4rem; }
+  #talk { width:min(70vw,260px); aspect-ratio:1; border-radius:50%; border:0;
+    background:var(--accent); color:#fff; font-size:1.6rem; font-weight:700;
+    box-shadow:0 8px 24px rgba(0,0,0,.25); touch-action:none; user-select:none;
+    -webkit-user-select:none; transition:transform .08s, background .08s; }
+  #talk.on { background:var(--accent-on); transform:scale(.95);
+    box-shadow:0 0 0 12px rgba(239,68,68,.25); }
+  .row { width:min(90vw,360px); display:flex; flex-direction:column; gap:6px; }
+  input[type=range] { width:100%; }
+  label { display:flex; justify-content:space-between; font-size:.95rem; }
+  .check { flex-direction:row; justify-content:flex-start; gap:8px; align-items:center; }
+  #meter { height:10px; border-radius:5px; background:rgba(128,128,128,.25); overflow:hidden; }
+  #bar { height:100%; width:0; background:var(--accent); }
+  .note { font-size:.8rem; color:var(--muted); text-align:center; max-width:360px; line-height:1.5; }
+  #err { color:#dc2626; font-size:.9rem; min-height:1.2em; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>📢 メガホン</h1>
+  <button id="talk" type="button">押して話す</button>
+  <div id="meter"><div id="bar"></div></div>
+  <div class="row">
+    <label>音量 <span id="gv">3.0×</span></label>
+    <input id="gain" type="range" min="1" max="8" step="0.1" value="3">
+    <label class="check"><input id="hold" type="checkbox" checked> 押している間だけ出す</label>
+    <label class="check"><input id="ec" type="checkbox" checked> ハウリング抑制(エコー除去)</label>
+  </div>
+  <div id="err"></div>
+  <p class="note">音量を上げすぎると「キーン」と鳴ります。イヤホンやBluetoothスピーカー使用時はハウリングしにくくなります。<br>
+  「押している間だけ出す」をオフにすると、ボタンのタップで入/切を切り替えます。</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const talk = $('talk'), gainEl = $('gain'), holdEl = $('hold'), ecEl = $('ec'), errEl = $('err'), bar = $('bar');
+let ctx, stream, src, gainNode, analyser, raf, active = false;
+
+async function setup() {
+  if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
+  errEl.textContent = '';
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: {
+      echoCancellation: ecEl.checked, noiseSuppression: ecEl.checked, autoGainControl: false } });
+  } catch (e) {
+    errEl.textContent = 'マイクを使えません。許可設定とHTTPS接続を確認してください。';
+    throw e;
+  }
+  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+  src = ctx.createMediaStreamSource(stream);
+  gainNode = ctx.createGain();
+  gainNode.gain.value = 0;
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -12; limiter.ratio.value = 12;
+  analyser = ctx.createAnalyser(); analyser.fftSize = 256;
+  src.connect(gainNode); gainNode.connect(limiter); limiter.connect(ctx.destination);
+  src.connect(analyser);
+  const buf = new Uint8Array(analyser.fftSize);
+  (function loop() {
+    analyser.getByteTimeDomainData(buf);
+    let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+    bar.style.width = Math.min(100, peak / 128 * 200) + '%';
+    raf = requestAnimationFrame(loop);
+  })();
+}
+
+function setActive(on) {
+  active = on;
+  talk.classList.toggle('on', on);
+  talk.textContent = on ? '話し中…' : (holdEl.checked ? '押して話す' : 'タップで開始');
+  if (gainNode) gainNode.gain.setTargetAtTime(on ? +gainEl.value : 0, ctx.currentTime, 0.02);
+}
+
+gainEl.addEventListener('input', () => {
+  $('gv').textContent = (+gainEl.value).toFixed(1) + '×';
+  if (active && gainNode) gainNode.gain.value = +gainEl.value;
+});
+holdEl.addEventListener('change', () => setActive(false));
+ecEl.addEventListener('change', () => {
+  // マイク設定を変えるため作り直す
+  if (ctx) { cancelAnimationFrame(raf); stream.getTracks().forEach(t => t.stop()); ctx.close(); ctx = null; }
+  setActive(false);
+});
+
+talk.addEventListener('pointerdown', async e => {
+  e.preventDefault();
+  try { await setup(); } catch { return; }
+  if (holdEl.checked) { talk.setPointerCapture(e.pointerId); setActive(true); }
+  else setActive(!active);
+});
+const release = () => { if (holdEl.checked) setActive(false); };
+talk.addEventListener('pointerup', release);
+talk.addEventListener('pointercancel', release);
+talk.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
