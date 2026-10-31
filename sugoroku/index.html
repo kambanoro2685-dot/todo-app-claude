@@ -231,7 +231,7 @@ const COURSES=[
   w:{gain:2,loss:5,happy:1,disaster:3,jump:1,back:3,skip:3,again:1,battle:2,lucky:2,item:1,none:2}},
  {id:'comeback',emoji:'🔥',name:'大逆転コース',desc:'ギャンブルとコツコツ株で一発逆転!最下位ほどギャンブルに勝ちやすい。',len:70,scale:1.5,pay:1.2,risk:1.2,stocks:true,
   w:{gain:2,loss:2,happy:1,disaster:1,jump:1,back:1,skip:1,again:2,battle:2,lucky:2,item:1,none:1,gamble:5,stock:5}},
- {id:'real',emoji:'🏠',name:'リアル人生コース',desc:'現実の人生にそっくり。ひとますごとに人徳の問いが出て、お金が尽きると破産コースをさまよう…!',len:72,scale:1,pay:1,risk:1,tick:4,stocks:true,ethics:true,bankrupt:true,
+ {id:'real',emoji:'🏠',name:'リアル人生コース',desc:'現実の人生にそっくり。ひとますごとにボーナスチャンスが出る!お金の管理にはご用心…。',len:72,scale:1,pay:1,risk:1,tick:4,stocks:true,ethics:true,bankrupt:true,
   w:{gain:3,loss:4,happy:4,disaster:1,jump:0,back:0,skip:2,again:1,battle:0,lucky:0,item:1,none:6,stock:2},
   ev:{
    gain:[['ボーナスが出た',120],['昇給した',80],['副業で少し収入',60],['お祝い金をもらった',100],['フリマで不用品が売れた',20],['確定申告で還付金',30],['社内表彰の報奨金',50]],
@@ -392,11 +392,11 @@ function startGame(){
     const bt=['bkexit','bkjob','bkfood','bkdebt','bkjob','bklot','bkexit','bkhelp','bkrest','bkjob','bkdebt','bkpawn'];
     bt.forEach((t,i)=>{const id=types.length;ids.push(id);types.push(t);const a=i/bt.length*Math.PI*2+Math.PI/2;L.pts.push([cx+Math.cos(a)*330,cy+Math.sin(a)*135])});
     ids.forEach((id,i)=>{BR.nxt[id]=[ids[(i+1)%ids.length]];BR.prv[id]=ids[(i+ids.length-1)%ids.length];BR.kind[id]=null;BR.rem[id]=1e9});
-    L.H=y0+extra;L.bk={ids,y0};
+    L.Hf=y0+extra;L.bk={ids,y0};
   }
   const topicAt=[];let k=0;types.forEach((t,i)=>{if(t==='news')topicAt[i]=topics[k++%topics.length]});
   const gid=(G?G.gid:0)+1;
-  G={gid,bk:L.bk||null,bkEntry:L.bk?L.bk.ids[1]:null,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
+  G={gid,bk:L.bk||null,Hf:L.Hf||L.H,bkShown:false,bkEntry:L.bk?L.bk.ids[1]:null,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
   G.stockHist=[G.stock];G.players.forEach(q=>mark(q,'🚩','18歳・人生のスタート'));
   $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
   $('#courseName').textContent=`${course.emoji} ${course.name}`;
@@ -466,7 +466,7 @@ function defsFor(svg){
   });
 }
 function drawScenery(svg,roadSamples){
-  const {W,H}=G;
+  const W=G.W,H=G.Hf||G.H;
   const dr=mulberry32(hash(G.board.join(',')));
   const R=(a,b)=>a+dr()*(b-a),pk=a=>a[Math.floor(dr()*a.length)];
   const area=W*H/1e6;
@@ -527,18 +527,19 @@ function drawScenery(svg,roadSamples){
   for(let i=0;i<Math.round(20*area);i++){const c=spot(46,30);if(c)tree(c[0],c[1],R(.8,1.2))}
 }
 
-function buildBoard(){
+function buildBoard(keepCam){
   const svg=$('#boardSvg');svg.innerHTML='';
-  const {W,H,pts}=G;
+  const {W,H,pts}=G;const HF=G.Hf||H;
   defsFor(svg);
-  el('rect',{x:0,y:0,width:W,height:H,class:'paper'},svg);
+  el('rect',{x:0,y:0,width:W,height:HF,class:'paper'},svg);
   // 道の見張り点(景色を道から離すため)
   const samples=pts.slice();
   for(let i=0;i<=G.goal-1;i++)samples.push([(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2]);
   G.branches.forEach(br=>{for(let i=0;i<br.ids.length-1;i++){const a=pts[br.ids[i]],b=pts[br.ids[i+1]];samples.push([(a[0]+b[0])/2,(a[1]+b[1])/2])}});
-  drawScenery(svg,samples);
-  if(G.bk){
-    const y0=G.bk.y0,gr=el('linearGradient',{id:'bkg',x1:0,y1:0,x2:0,y2:1},svg);
+  const cp=el('clipPath',{id:'sceneClip'},svg);el('rect',{x:0,y:0,width:W,height:H},cp);
+  drawScenery(el('g',{'clip-path':'url(#sceneClip)'},svg),samples);
+  if(G.bk&&G.bkShown){
+    const H=G.Hf,y0=G.bk.y0,gr=el('linearGradient',{id:'bkg',x1:0,y1:0,x2:0,y2:1},svg);
     el('stop',{offset:'0','stop-color':'#2a2f38','stop-opacity':0},gr);el('stop',{offset:'.18','stop-color':'#2a2f38','stop-opacity':.88},gr);el('stop',{offset:'1','stop-color':'#15181d','stop-opacity':.95},gr);
     el('rect',{x:20,y:y0-70,width:W-40,height:H-y0+50,fill:'url(#bkg)'},svg);
     const rr=mulberry32(77);for(let i=0;i<60;i++){const x=rr()*W,y=y0+rr()*(H-y0-30);el('line',{x1:x,y1:y,x2:x-8,y2:y+22,stroke:'#fff','stroke-opacity':.18,'stroke-width':1.5},svg)}
@@ -577,7 +578,7 @@ function buildBoard(){
   const mainPts=pts.slice(0,G.goal+1);
   for(let i=0;i<mainPts.length-1;i++){const s=segInfo(mainPts,i);SURF[G.surf[i]](s.d);s.surf=G.surf[i];s.i=i;vehicles.push(s)}
   G.branches.forEach(br=>{const arr=br.ids.map(id=>pts[id]);for(let i=0;i<arr.length-1;i++){const s=segInfo(arr,i);SURF[br.surf](s.d);s.surf=br.surf;s.i=-1;vehicles.push(s)}});
-  if(G.bk){const arr=G.bk.ids.map(i=>pts[i]);arr.push(arr[0]);for(let i=0;i<arr.length-1;i++)SURF.dirt(segInfo(arr,i).d)}
+  if(G.bk&&G.bkShown){const arr=G.bk.ids.map(i=>pts[i]);arr.push(arr[0]);for(let i=0;i<arr.length-1;i++)SURF.dirt(segInfo(arr,i).d)}
   // 乗り物
   const vr=mulberry32(hash(G.board.join('|')));
   const VEH={asphalt:['🚗','🚙','🚌','🚚','🚓','🚕'],dirt:['🚜','🛻','🐎'],rail:['🚆','🚃','🚂']};
@@ -592,6 +593,7 @@ function buildBoard(){
   });
   // マス
   G.board.forEach((type,i)=>{
+    if(G.bk&&!G.bkShown&&i>=G.bk.ids[0])return;
     const [x,y]=pts[i],Rr=radius(type),[em,lb]=TILE[type];
     const big=STOPS.includes(type)||type==='goal'||type==='start';
     const g=el('g',{transform:`translate(${x},${y})`,filter:'url(#ds)'},svg);
@@ -605,7 +607,7 @@ function buildBoard(){
   });
   G.branches.forEach(br=>{const q=pts[br.ids[1]];el('text',{x:q[0],y:q[1]-32,'text-anchor':'middle','font-size':14,'font-weight':900,class:'lbl'},svg,br.kind==='short'?'⚡近道':'🌿寄り道')});
   G.tokLayer=el('g',{},svg);
-  camOverview();Object.assign(cam,camT);
+  if(!keepCam){camOverview();Object.assign(cam,camT)}
   renderTokens();
 }
 const pk0=(r,a)=>a[Math.floor(r()*a.length)];
@@ -999,16 +1001,17 @@ async function ethicsQuestion(p){
     const best=opts.reduce((a,o,i)=>o[2]>opts[a][2]?i:a,0);
     ch=Math.random()<p.ethic?best:Math.floor(Math.random()*opts.length);
   }else{
-    ch=await modal('<h2>🧭 人徳の問い</h2><div>'+esc(q)+'</div>',opts.map(o=>esc(o[0])+(o[1]?' <small>('+(o[1]>0?'+':'')+sc(o[1])+'万円)</small>':'')));
+    ch=await modal('<h2>🎁 ボーナスチャンス!</h2><div>'+esc(q)+'<br><small>よい行いには、ボーナスが…?</small></div>',opts.map(o=>esc(o[0])));
   }
-  const o=opts[ch],m=o[1]?sc(o[1]):0;
+  const o=opts[ch],m=o[2]>0?sc(o[2]*8):(o[1]>0?sc(o[1]):0);if(o[2]>0)p.happy+=2;
   if(m)p.money+=m;p.virtue+=o[2];
-  log(`🧭 ${p.name}:「${o[0]}」 徳${o[2]>0?'+':''}${o[2]}${m?' / '+(m>0?'+':'')+m+'万円':''}`);
-  if(!p.cpu){beep(o[2]>=0?880:200,.15,o[2]>=0?'triangle':'sawtooth');await showCard(o[2]>=0?'🌟':'😈',esc(o[0]),`<span class="${o[2]>=0?'plus':'minus'}">徳 ${o[2]>0?'+':''}${o[2]}</span> ${m?deltaText(m,0):''}`)}
+  log(`🎁 ${p.name}:「${o[0]}」${o[2]>0?' ボーナス!':''} 徳${o[2]>0?'+':''}${o[2]}${m?' / '+(m>0?'+':'')+m+'万円':''}`);
+  if(!p.cpu){beep(o[2]>=0?880:200,.15,o[2]>=0?'triangle':'sawtooth');await showCard(o[2]>=0?'🌟':'😈',esc(o[0]),`<span class="${o[2]>=0?'plus':'minus'}">${o[2]>0?'🎁ボーナス! ':''}徳 ${o[2]>0?'+':''}${o[2]}</span> ${m?deltaText(m,0):''}`)}
 }
 
 const bkPen=p=>p.bkCount*100+(p.bankrupt?100:0);
 async function goBankrupt(p){
+  if(G.bk&&!G.bkShown){G.bkShown=true;G.H=G.Hf;buildBoard(true)}
   p.bankrupt=true;p.bkCount++;p.savedPos=p.pos;
   p.house=null;p.shares=0;p.cost=0;p.money=0;p.happy-=10;
   mark(p,'💥','破産');
