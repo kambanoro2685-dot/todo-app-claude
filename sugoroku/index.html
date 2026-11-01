@@ -104,6 +104,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 .card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;background:var(--card);border:4px solid var(--accent);border-radius:18px;padding:16px 22px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.35);min-width:230px;max-width:90%;animation:pop .25s}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.6);opacity:0}}
 .card .ic{font-size:2.6rem}.card .tx{font-weight:700;margin:4px 0}.card .sb{font-size:1.1rem;font-weight:700}
+.card .hint{margin-top:8px;font-size:.8rem;opacity:.6;animation:hintblink 1.2s infinite alternate}@keyframes hintblink{to{opacity:.15}}
 .plus{color:#1b9a3a}.minus{color:#d6322f}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .modal .box{background:var(--card);border-radius:18px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
@@ -645,9 +646,24 @@ function renderPlayers(){
   });
 }
 function log(t){const l=$('#log');const d=document.createElement('div');d.textContent=t;l.appendChild(d);l.scrollTop=l.scrollHeight}
+// ポップアップは、クリック・タップ・キーのどれかを押すまで表示する(超高速モードだけ自動で閉じる)
+function waitDismiss(ms){
+  if(S.speed<=.1)return sleep(ms);
+  const gid=G&&G.gid;
+  return new Promise((res,rej)=>{
+    const t0=Date.now();
+    const done=e=>{
+      if(Date.now()-t0<250)return;
+      document.removeEventListener('pointerdown',done,true);document.removeEventListener('keydown',done,true);
+      G&&G.gid===gid?res():rej('abort');
+    };
+    document.addEventListener('pointerdown',done,true);document.addEventListener('keydown',done,true);
+  });
+}
 async function showCard(icon,text,sub='',cls=''){
-  const c=$('#card');c.innerHTML=`<div class="ic">${icon}</div><div class="tx">${text}</div><div class="sb ${cls}">${sub}</div>`;
-  c.classList.remove('hidden');await sleep(1500);c.classList.add('hidden');
+  const c=$('#card');c.innerHTML=`<div class="ic">${icon}</div><div class="tx">${text}</div><div class="sb ${cls}">${sub}</div><div class="hint">▶ クリック・タップ・キーで次へ</div>`;
+  c.classList.remove('hidden');
+  try{await waitDismiss(1500)}finally{c.classList.add('hidden')}
 }
 function modal(html,buttons){
   return new Promise(res=>{
@@ -1160,7 +1176,8 @@ async function playTurn(p){
 }
 async function showCardQuick(icon,text){
   const c=$('#card');c.innerHTML=`<div class="ic">${icon}</div><div class="tx">${text}</div>`;
-  c.classList.remove('hidden');await sleep(550);c.classList.add('hidden');
+  c.innerHTML+='<div class="hint">▶ クリック・タップ・キーで次へ</div>';c.classList.remove('hidden');
+  try{await waitDismiss(550)}finally{c.classList.add('hidden')}
 }
 
 async function reachGoal(p){
@@ -1333,7 +1350,8 @@ async function roulette(p){
   const c=$('#card');c.classList.remove('hidden');
   for(let i=0;i<12;i++){c.innerHTML=`<div class="ic">🎰</div><div class="tx">${pick(outs)[0]}</div>`;beep(400+i*30,.05);await sleep(90+i*12)}
   c.innerHTML=`<div class="ic">🎰</div><div class="tx">${pk[0]}</div><div class="sb">けってい!</div>`;
-  jingle([784,988,1175]);await sleep(1000);c.classList.add('hidden');
+  c.innerHTML+='<div class="hint">▶ クリック・タップ・キーで次へ</div>';
+  jingle([784,988,1175]);try{await waitDismiss(1000)}finally{c.classList.add('hidden')}
   log(`🎰 ${p.name}のルーレット: ${pk[0]}`);
   await pk[1]();
 }
