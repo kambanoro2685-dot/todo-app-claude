@@ -105,6 +105,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.6);opacity:0}}
 .card .ic{font-size:2.6rem}.card .tx{font-weight:700;margin:4px 0}.card .sb{font-size:1.1rem;font-weight:700}
 .card .hint{margin-top:8px;font-size:.8rem;opacity:.6;animation:hintblink 1.2s infinite alternate}@keyframes hintblink{to{opacity:.15}}
+#pickRow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}#pickRow button.num{min-width:52px;padding:.35em .4em;font-size:.95rem;line-height:1.2}#pickRow button.num small{display:block;font-size:.8rem;font-weight:400}
 .plus{color:#1b9a3a}.minus{color:#d6322f}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .modal .box{background:var(--card);border-radius:18px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
@@ -163,12 +164,13 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
   <div class="panel">
     <h2>⚙ せってい</h2>
     <div class="seg" id="segSpeed"></div>
+    <div class="seg" id="segPick" style="margin-top:8px"></div>
     <div style="margin-top:8px"><label><input type="checkbox" id="snd" checked> 効果音</label></div>
   </div>
   <button class="start" id="startBtn">🚩 スタート!</button>
   <div class="panel" style="margin-top:14px;font-size:.85rem">
     <b>あそびかた</b><br>
-    🎡ルーレット(1〜10)をまわして車を進め、<b>老後(ゴール)</b>をめざそう。<b>進学・就職・結婚・出産・家購入</b>のマスでは必ず止まります。結婚で車にペグが乗り、子どもが生まれるとペグが増えます。<br>
+    🎡ルーレット(設定で1〜6/8/10/12から選べます)をまわして車を進め、<b>老後(ゴール)</b>をめざそう。<b>進学・就職・結婚・出産・家購入</b>のマスでは必ず止まります。結婚で車にペグが乗り、子どもが生まれるとペグが増えます。<br>
     最終精算 = お金 + 家の売却額(土地の値動きあり) + 子ども×40 + 人生カード×30 + しあわせ×5 + 到着ボーナス(1位300/2位150/3位80/4位30)。<br>
     誰かが老後に到着すると<b>残りのプレイヤーはあと3ターン</b>!🎁アイテム:🎡ベストスピン(2回まわして大きい方)、🛡シールド(マイナスを1回防ぐ)
     <div id="best" style="margin-top:6px"></div>
@@ -195,6 +197,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
           <button id="rollBtn">🎡 ルーレットをまわす</button>
           <button id="dblBtn" class="sub hidden">🎡🎡 ベストスピン</button>
         </div>
+        <div id="pickRow" class="hidden"></div>
       </div>
       <div id="players" class="side"></div>
       <div class="pl" id="newsBox"></div>
@@ -256,7 +259,7 @@ const EV={
 const SPEEDS=[['ふつう',1],['はやい',.55],['じっくり',1.5],['超高速',.05]];
 
 /* ---------- セットアップ ---------- */
-const S={humans:1,cpus:1,course:'wild',speed:1,names:[],mode:'news',fixedNo:1,startYear:2000};
+const S={pick:false,sides:10,humans:1,cpus:1,course:'wild',speed:1,names:[],mode:'news',fixedNo:1,startYear:2000};
 const CPU_NAMES=['CPU太郎','CPU花子','CPUジロー'];
 function seg(el,items,get,set){
   el.innerHTML='';
@@ -271,6 +274,7 @@ function renderSetup(){
   seg($('#segHuman'),[1,2,3,4].map(n=>[n+'人',n]),()=>S.humans,v=>S.humans=v);
   seg($('#segCpu'),[0,1,2,3].map(n=>[n?n+'人':'なし',n,S.humans+n>4]),()=>S.cpus,v=>S.cpus=v);
   seg($('#segSpeed'),SPEEDS.map(([l,v])=>['進行:'+l,v]),()=>S.speed,v=>S.speed=v);
+  seg($('#segPick'),[6,8,10,12].map(n=>['🎡 ルーレット 1〜'+n,n]),()=>S.sides,v=>S.sides=v);
   seg($('#segYear'),[1960,1970,1980,1990,2000,2010,2020].map(y=>[y+'年',y]),()=>S.startYear,v=>S.startYear=v);
   $('#yearIn').value=S.startYear;
   seg($('#segMode'),[['📰 時事モード(当時の時事が反映)','news'],['📌 固定モード(番号をえらぶ)','fixed']],()=>S.mode,v=>S.mode=v);
@@ -399,6 +403,7 @@ function startGame(){
   const gid=(G?G.gid:0)+1;
   G={gid,bk:L.bk||null,Hf:L.Hf||L.H,bkShown:false,bkEntry:L.bk?L.bk.ids[1]:null,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
   G.stockHist=[G.stock];G.players.forEach(q=>mark(q,'🚩','18歳・人生のスタート'));
+  buildWheel();wheelRot=0;$('#wheel').style.transition='none';$('#wheel').style.transform='rotate(0deg)';
   $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
   $('#courseName').textContent=`${course.emoji} ${course.name}`;
   $('#banner').classList.add('hidden');$('#log').innerHTML='';
@@ -1106,6 +1111,30 @@ async function loadEra(y){
   ERA[y]=[...new Set(list)].slice(0,40);
   return ERA[y];
 }
+/* ---------- ルーレットの数字を選ぶ ---------- */
+function landing(p,n){
+  let pos=p.pos,pay=0;
+  for(let i=0;i<n;i++){
+    const nx=G.nxt[pos][0];
+    if(nx===undefined)break;
+    pos=nx;
+    if(pos===G.goal)break;
+    const t=G.board[pos];
+    if(t==='payday')pay++;
+    if(STOPS.includes(t)&&!p.flags[t])break;
+  }
+  return {pos,type:G.board[pos],pay};
+}
+const PICK_SCORE={goal:30,payday:6,gain:5,item:4,happy:4,again:5,lucky:3,jump:4,news:2,none:1,stock:3,gamble:1,battle:0,school:3,job:3,marry:3,baby:3,house:3,
+  skip:-4,loss:-4,disaster:-6,back:-3,bkjob:3,bkhelp:4,bklot:2,bkexit:6,bkfood:1,bkpawn:2,bkrest:-3,bkdebt:-3};
+function cpuPick(p){
+  let best=-1e9,cand=[];
+  for(let n=1;n<=10;n++){
+    const l=landing(p,n),sc2=(PICK_SCORE[l.type]??0)+l.pay;
+    if(sc2>best){best=sc2;cand=[n]}else if(sc2===best)cand.push(n);
+  }
+  return cand[Math.floor(Math.random()*cand.length)];
+}
 function nextTurn(){
   let n=0;
   do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0){G.round++;onRound()}n++}while(G.players[G.turn].done&&n<10);
@@ -1117,21 +1146,36 @@ function waitRoll(p){
   db.classList.toggle('hidden',p.items.dice2<=0);
   return new Promise(res=>{
     G.rollResolve=res;
-    rb.onclick=()=>{rb.disabled=true;db.classList.add('hidden');res(1)};
-    db.onclick=()=>{rb.disabled=true;db.classList.add('hidden');res(2)};
+    const pr=$('#pickRow');pr.innerHTML='';
+    const hidePick=()=>pr.classList.add('hidden');
+    if(S.pick){
+      pr.classList.remove('hidden');
+      for(let n=1;n<=10;n++){
+        const l=landing(p,n),b=document.createElement('button');
+        b.className='sub num';b.innerHTML=n+'<small>'+(TILE[l.type]?TILE[l.type][0]:'')+(l.pay?'💴':'')+'</small>';
+        b.title=n+'マス進む('+(TILE[l.type]?TILE[l.type][1]||l.type:l.type)+')';
+        b.onclick=()=>{rb.disabled=true;db.classList.add('hidden');hidePick();res(100+n)};
+        pr.appendChild(b);
+      }
+    }else hidePick();
+    rb.onclick=()=>{rb.disabled=true;db.classList.add('hidden');hidePick();res(1)};
+    db.onclick=()=>{rb.disabled=true;db.classList.add('hidden');hidePick();res(2)};
   });
 }
 
 let wheelRot=0;
 function buildWheel(){
   const w=$('#wheel');w.innerHTML='';
-  for(let i=1;i<=10;i++){const e=document.createElement('span');e.textContent=i;e.style.transform=`rotate(${(i-.5)*36}deg) translateY(-54px)`;w.appendChild(e)}
+  const N=S.sides,seg=360/N,cols=['#ff6b6b','#ffd166','#06d6a0','#4dabf7','#b197fc'];
+  let grad=[];for(let i=0;i<N;i++)grad.push(cols[i%cols.length]+' '+(i*seg)+'deg '+((i+1)*seg)+'deg');
+  w.style.background='conic-gradient('+grad.join(',')+')';
+  for(let i=1;i<=N;i++){const e=document.createElement('span');e.textContent=i;e.style.transform=`rotate(${(i-.5)*seg}deg) translateY(-54px)`;if(N>=12)e.style.fontSize='.8rem';w.appendChild(e)}
 }
-async function rollDice(n){
+async function rollDice(n,forced){
   const d=$('#dice'),w=$('#wheel');const vals=[];
   for(let k=0;k<n;k++){
-    const v=rnd(1,10);vals.push(v);d.textContent='…';
-    wheelRot=Math.ceil(wheelRot/360)*360+360*4+((360-(v-.5)*36)%360);
+    const v=(forced!=null&&k===0)?forced:rnd(1,S.sides);vals.push(v);d.textContent='…';
+    wheelRot=Math.ceil(wheelRot/360)*360+360*4+((360-(v-.5)*(360/S.sides))%360);
     w.style.transition=`transform ${1.5*S.speed}s cubic-bezier(.15,.7,.2,1)`;w.style.transform=`rotate(${wheelRot}deg)`;
     for(let i=0;i<8;i++){beep(300+i*50,.04);await sleep(180)}
     await sleep(200);d.textContent=v;jingle([784]);await sleep(300);
@@ -1141,17 +1185,20 @@ async function rollDice(n){
 
 async function playTurn(p){
   const rb=$('#rollBtn'),db=$('#dblBtn');
-  let mode=1;
+  let mode=1,forced=null;
+  $('#pickRow').classList.add('hidden');
   if(p.cpu){
     rb.disabled=true;rb.textContent='🤖 考え中…';db.classList.add('hidden');
     await sleep(700);
     if(p.items.dice2>0&&Math.random()<.5)mode=2;
+    if(S.pick&&mode===1)forced=cpuPick(p);
   }else{
     mode=await waitRoll(p);
+    if(mode>=100){forced=mode-100;mode=1}
     if(G.gid===undefined)return;
   }
   if(mode===2)p.items.dice2--;
-  const vals=await rollDice(mode);
+  const vals=await rollDice(mode,forced);
   const total=Math.max(...vals);
   $('#dice').textContent=total;
   log(`🎡 ${p.name}は${vals.join(' と ')}${mode===2?' → '+total+'を採用':''}!`);
