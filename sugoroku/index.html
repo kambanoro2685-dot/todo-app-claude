@@ -51,7 +51,8 @@ button.sub{background:var(--card);color:var(--ink);border:2px solid var(--line)}
 @media(max-width:900px){.game{grid-template-columns:1fr}}
 .boardwrap{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:8px;position:relative}
 #boardSvg{width:100%;height:min(72vh,680px);display:block;border-radius:10px}
-@media(max-width:900px){#boardSvg{height:58vh}}
+@media(max-width:900px){#boardSvg{height:34vh}.topbar{gap:4px}.topbar button{padding:.3em .6em;font-size:.8rem;box-shadow:0 2px 0 rgba(0,0,0,.2)}.topbar b{font-size:.9rem}.turn{margin-bottom:2px;font-size:.9rem}.boardwrap{padding:4px}}
+@media(max-height:820px){.wheelbox{transform:scale(.78);transform-origin:top center;margin-bottom:-42px}.dice{font-size:1.8rem;min-height:1.8rem;margin:2px 0 6px}.ctrl{padding:8px}.topbar{margin-bottom:6px}.wrap{padding-top:8px}}
 .paper{fill:var(--paper)}.road-o{stroke:var(--roadO)}.road-i{stroke:var(--roadI)}
 .ttl{fill:var(--ink);font-family:"Yu Mincho","Hiragino Mincho ProN",serif;letter-spacing:.2em}.ttl2{fill:var(--ink);opacity:.7}
 .lbl{fill:var(--ink);stroke:var(--paper);stroke-width:5;paint-order:stroke}
@@ -425,7 +426,7 @@ function startGame(){
   G={history:[],cur:null,gid,bk:L.bk||null,Hf:L.Hf||L.H,bkShown:false,bkEntry:L.bk?L.bk.ids[1]:null,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
   G.stockHist=[G.stock];G.players.forEach(q=>mark(q,'🚩','18歳・人生のスタート'));
   buildWheel();wheelRot=0;$('#wheel').style.transition='none';$('#wheel').style.transform='rotate(0deg)';
-  $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
+  $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');window.scrollTo(0,0);
   $('#courseName').textContent=`${course.emoji} ${course.name}`;
   $('#banner').classList.add('hidden');$('#log').innerHTML='';
   renderNewsBox();buildBoard();renderPlayers();
@@ -637,8 +638,8 @@ function buildBoard(keepCam){
   });
   G.branches.forEach(br=>{const q=pts[br.ids[1]];el('text',{x:q[0],y:q[1]-32,'text-anchor':'middle','font-size':14,'font-weight':900,class:'lbl'},svg,br.kind==='short'?'⚡近道':'🌿寄り道')});
   G.tokLayer=el('g',{},svg);
-  if(!keepCam){camOverview();Object.assign(cam,camT)}
   renderTokens();
+  if(!keepCam)Object.assign(cam,camT);
 }
 const pk0=(r,a)=>a[Math.floor(r()*a.length)];
 function renderTokens(){
@@ -1218,7 +1219,6 @@ async function nudgeSettings(){
 ['pointerdown','keydown','wheel','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},true));
 setInterval(()=>{
   if(!nudgeSec)return;
-  if($('#game').classList.contains('hidden'))return;
   if(!$('#nudge').classList.contains('hidden'))return;
   if(!$('#afterlife').classList.contains('hidden'))return;
   if(Date.now()-lastAct>=nudgeSec*1000)showNudge();
