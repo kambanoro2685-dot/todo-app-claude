@@ -107,6 +107,22 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 .card .hint{margin-top:8px;font-size:.8rem;opacity:.6;animation:hintblink 1.2s infinite alternate}@keyframes hintblink{to{opacity:.15}}
 #pickRow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}#pickRow button.num{min-width:52px;padding:.35em .4em;font-size:.95rem;line-height:1.2}#pickRow button.num small{display:block;font-size:.8rem;font-weight:400}
 .he{border-left:3px solid var(--accent);padding:2px 0 2px 8px;margin:8px 0;font-size:.85rem}.he .hl{font-weight:700;font-size:.95rem}.he ul{margin:2px 0 0;padding-left:1.2em;font-size:.78rem;opacity:.85}
+#nudge{position:fixed;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(circle,#4a0b0b,#120202);color:#fff;text-align:center;overflow:hidden}
+#nudge.hidden{display:none}
+.nd-box{max-width:1100px;width:100%}
+.nd-1,.nd-2{font-weight:900;line-height:1.15;text-shadow:0 6px 0 #000,0 0 30px rgba(255,60,60,.7);opacity:0}
+.nd-1{font-size:clamp(1.6rem,min(9vw,12vh),7rem)}.nd-2{font-size:clamp(1.8rem,min(11vw,15vh),8.5rem);color:#ffd84a;margin-top:.2em}
+.nd-don{position:absolute;left:50%;top:50%;font-size:clamp(5rem,28vw,22rem);font-weight:900;color:#ff3b3b;opacity:0;transform:translate(-50%,-50%) scale(3);white-space:nowrap;pointer-events:none;text-shadow:0 0 40px #000}
+.nd-btns{margin-top:min(2.2em,4vh);opacity:0}
+#nudge.play{animation:ndshake .6s .25s}
+#nudge.play .nd-don{animation:nddon 1.1s ease-out}
+#nudge.play .nd-1{animation:ndslam .5s .35s cubic-bezier(.2,1.6,.4,1) forwards}
+#nudge.play .nd-2{animation:ndslam .55s 1.2s cubic-bezier(.2,1.6,.4,1) forwards}
+#nudge.play .nd-btns{animation:ndfade .5s 2s forwards}
+@keyframes nddon{0%{opacity:1;transform:translate(-50%,-50%) scale(5)}25%{opacity:1;transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.15)}}
+@keyframes ndslam{0%{opacity:0;transform:scale(4) rotate(-5deg)}60%{opacity:1;transform:scale(.92) rotate(1deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+@keyframes ndfade{to{opacity:1}}
+@keyframes ndshake{0%,100%{transform:translate(0,0)}15%{transform:translate(-14px,8px)}30%{transform:translate(12px,-10px)}45%{transform:translate(-9px,-6px)}60%{transform:translate(7px,7px)}80%{transform:translate(-4px,2px)}}
 .plus{color:#1b9a3a}.minus{color:#d6322f}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .modal .box{background:var(--card);border-radius:18px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
@@ -166,6 +182,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
     <h2>⚙ せってい</h2>
     <div class="seg" id="segSpeed"></div>
     <div class="seg" id="segPick" style="margin-top:8px"></div>
+    <div style="margin-top:8px"><button class="sub" id="nudgeBtn2">⏰ 促し</button></div>
     <div style="margin-top:8px"><label><input type="checkbox" id="snd" checked> 効果音</label></div>
   </div>
   <button class="start" id="startBtn">🚩 スタート!</button>
@@ -183,7 +200,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 <div id="game" class="hidden">
   <div class="topbar">
     <b id="courseName"></b>
-    <div><button class="sub" id="histBtn">📜 履歴</button> <button class="sub" id="zoomBtn">🔍 全体を見る</button> <button class="sub" id="legendBtn">マスの見方</button> <button class="sub" id="quitBtn">タイトルへ</button></div>
+    <div><button class="sub" id="nudgeBtn">⏰ 促し</button> <button class="sub" id="histBtn">📜 履歴</button> <button class="sub" id="zoomBtn">🔍 全体を見る</button> <button class="sub" id="legendBtn">マスの見方</button> <button class="sub" id="quitBtn">タイトルへ</button></div>
   </div>
   <div class="game">
     <div class="boardwrap">
@@ -208,6 +225,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
   </div>
 </div>
 </div>
+<div id="nudge" class="hidden"><div class="nd-box"><div class="nd-don">どーん!</div><div class="nd-1">今の自分で<br>いいのですか?</div><div class="nd-2">他にする事<br>あるのでは?</div><div class="nd-btns"><button id="nudgeOk">🎮 もう少し遊ぶ</button> <button class="sub" id="nudgeCfg">⏰ 設定</button></div></div></div>
 <div id="afterlife" class="hidden"><div class="al-box"><div class="al-ic"></div><div class="al-ti"></div><div class="al-tx"></div><div class="al-strip"></div><div class="al-sc"></div></div></div>
 <div id="modal" class="modal hidden"><div class="box" id="modalBox"></div></div>
 
@@ -1173,6 +1191,38 @@ function showLastHistory(){
   if(!d)return;
   modal('<h2>📜 前回のゲームの履歴</h2><div style="font-size:.85rem;opacity:.75">'+esc(d.course)+'・'+d.year+'年スタート・'+esc(new Date(d.at).toLocaleString('ja-JP'))+'</div>'+histHtml(d.entries,false),['とじる']);
 }
+/* ---------- 促し(しばらく操作しないと、どーん!と出る) ---------- */
+let nudgeSec=20,lastAct=Date.now();
+function loadNudge(){try{const v=localStorage.getItem('sugoroku-nudge');if(v!==null)nudgeSec=Math.max(0,parseInt(v,10)||0)}catch(e){}}
+function updateNudgeBtns(){
+  const t='⏰ 促し('+(nudgeSec?nudgeSec+'秒':'オフ')+')';
+  ['#nudgeBtn','#nudgeBtn2'].forEach(s=>{const b=$(s);if(b)b.textContent=t});
+}
+function showNudge(){
+  const n=$('#nudge');
+  n.classList.remove('hidden');n.classList.remove('play');void n.offsetWidth;n.classList.add('play');
+  [70,55,45].forEach((f,i)=>setTimeout(()=>beep(f,.45,'sine',.2),i*900));
+}
+async function nudgeSettings(){
+  const cur=nudgeSec;
+  const i=await modal('<h2>⏰ 促しの設定</h2><div>何も操作しないまま、設定した秒数がたつと、画面いっぱいに「今の自分でいいのですか?」と出ます。<br>いまの設定:<b>'+(cur?cur+'秒':'オフ')+'</b></div>'
+    +'<div style="margin-top:10px">自由に入力: <input type="number" id="nudgeIn" min="5" max="3600" value="'+(cur||20)+'" style="width:6em;padding:.3em;border-radius:8px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit"> 秒(5〜3600)</div>',
+    ['オフにする','10秒','20秒(おすすめ)','30秒','60秒','入力した秒数にする','とじる']);
+  const vals=[0,10,20,30,60];
+  let v=null;
+  if(i<5)v=vals[i];
+  else if(i===5){v=parseInt(document.getElementById('nudgeIn').value,10);if(!(v>=5))v=5;if(v>3600)v=3600}
+  if(v!==null){nudgeSec=v;try{localStorage.setItem('sugoroku-nudge',String(v))}catch(e){}updateNudgeBtns()}
+  lastAct=Date.now();
+}
+['pointerdown','keydown','wheel','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now()},true));
+setInterval(()=>{
+  if(!nudgeSec)return;
+  if($('#game').classList.contains('hidden'))return;
+  if(!$('#nudge').classList.contains('hidden'))return;
+  if(!$('#afterlife').classList.contains('hidden'))return;
+  if(Date.now()-lastAct>=nudgeSec*1000)showNudge();
+},1000);
 function nextTurn(){
   let n=0;
   do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0){G.round++;onRound()}n++}while(G.players[G.turn].done&&n<10);
@@ -1504,6 +1554,9 @@ $('#startBtn').onclick=async()=>{
   startGame();
 };
 $('#histBtn').onclick=showHistory;
+$('#nudgeBtn').onclick=nudgeSettings;$('#nudgeBtn2').onclick=nudgeSettings;$('#nudgeCfg').onclick=nudgeSettings;
+$('#nudgeOk').onclick=()=>{$('#nudge').classList.add('hidden');lastAct=Date.now()};
+loadNudge();updateNudgeBtns();
 $('#lastHistBtn').onclick=showLastHistory;
 $('#zoomBtn').onclick=()=>{zoomOn=!zoomOn;$('#zoomBtn').textContent=zoomOn?'🔍 全体を見る':'🔎 手番のところを拡大';if(G)focus()};
 $('#quitBtn').onclick=async()=>{
