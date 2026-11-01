@@ -106,6 +106,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 .card .ic{font-size:2.6rem}.card .tx{font-weight:700;margin:4px 0}.card .sb{font-size:1.1rem;font-weight:700}
 .card .hint{margin-top:8px;font-size:.8rem;opacity:.6;animation:hintblink 1.2s infinite alternate}@keyframes hintblink{to{opacity:.15}}
 #pickRow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:10px}#pickRow button.num{min-width:52px;padding:.35em .4em;font-size:.95rem;line-height:1.2}#pickRow button.num small{display:block;font-size:.8rem;font-weight:400}
+.he{border-left:3px solid var(--accent);padding:2px 0 2px 8px;margin:8px 0;font-size:.85rem}.he .hl{font-weight:700;font-size:.95rem}.he ul{margin:2px 0 0;padding-left:1.2em;font-size:.78rem;opacity:.85}
 .plus{color:#1b9a3a}.minus{color:#d6322f}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
 .modal .box{background:var(--card);border-radius:18px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
@@ -168,6 +169,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
     <div style="margin-top:8px"><label><input type="checkbox" id="snd" checked> 効果音</label></div>
   </div>
   <button class="start" id="startBtn">🚩 スタート!</button>
+  <button class="sub hidden" id="lastHistBtn" style="width:100%;margin-top:10px">📜 前回のゲームの履歴を見る</button>
   <div class="panel" style="margin-top:14px;font-size:.85rem">
     <b>あそびかた</b><br>
     🎡ルーレット(設定で1〜6/8/10/12から選べます)をまわして車を進め、<b>老後(ゴール)</b>をめざそう。<b>進学・就職・結婚・出産・家購入</b>のマスでは必ず止まります。結婚で車にペグが乗り、子どもが生まれるとペグが増えます。<br>
@@ -181,7 +183,7 @@ svg .sp.t-job,svg .sp.t-marry,svg .sp.t-baby,svg .sp.t-start,svg .sp.t-goal,svg 
 <div id="game" class="hidden">
   <div class="topbar">
     <b id="courseName"></b>
-    <div><button class="sub" id="zoomBtn">🔍 全体を見る</button> <button class="sub" id="legendBtn">マスの見方</button> <button class="sub" id="quitBtn">タイトルへ</button></div>
+    <div><button class="sub" id="histBtn">📜 履歴</button> <button class="sub" id="zoomBtn">🔍 全体を見る</button> <button class="sub" id="legendBtn">マスの見方</button> <button class="sub" id="quitBtn">タイトルへ</button></div>
   </div>
   <div class="game">
     <div class="boardwrap">
@@ -297,6 +299,7 @@ function renderSetup(){
     d.innerHTML=`<b>${c.emoji} ${c.name}</b><p>${c.desc}</p><div class="meta">${c.len?c.len+'マス':'???マス'}</div>`;
     d.onclick=()=>{S.course=c.id;renderSetup();};cs.appendChild(d);
   });
+  try{$('#lastHistBtn').classList.toggle('hidden',!localStorage.getItem('sugoroku-last'))}catch(e){}
   let best='';
   try{const b=JSON.parse(localStorage.getItem('sugoroku-best')||'{}');
     best=COURSES.filter(c=>b[c.id]!=null).map(c=>`${c.emoji}${b[c.id]}`).join(' / ');}catch(e){}
@@ -401,7 +404,7 @@ function startGame(){
   }
   const topicAt=[];let k=0;types.forEach((t,i)=>{if(t==='news')topicAt[i]=topics[k++%topics.length]});
   const gid=(G?G.gid:0)+1;
-  G={gid,bk:L.bk||null,Hf:L.Hf||L.H,bkShown:false,bkEntry:L.bk?L.bk.ids[1]:null,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
+  G={history:[],cur:null,gid,bk:L.bk||null,Hf:L.Hf||L.H,bkShown:false,bkEntry:L.bk?L.bk.ids[1]:null,startYear:S.startYear,stock:course.stocks?Math.round(40*course.scale/5)*5:null,course,board:types,topicAt,nxt:BR.nxt,prv:BR.prv,kind:BR.kind,branches:BR.branches,rem:BR.rem,goal:BR.goal,surf,pts:L.pts,W:L.W,H:L.H,players,turn:0,extra:false,finish:[],firstGoal:false,rollResolve:null,rollMode:1,round:1};
   G.stockHist=[G.stock];G.players.forEach(q=>mark(q,'🚩','18歳・人生のスタート'));
   buildWheel();wheelRot=0;$('#wheel').style.transition='none';$('#wheel').style.transform='rotate(0deg)';
   $('#setup').classList.add('hidden');$('#game').classList.remove('hidden');
@@ -650,7 +653,7 @@ function renderPlayers(){
     box.appendChild(d);
   });
 }
-function log(t){const l=$('#log');const d=document.createElement('div');d.textContent=t;l.appendChild(d);l.scrollTop=l.scrollHeight}
+function log(t){if(G&&G.cur)G.cur.notes.push(t);const l=$('#log');const d=document.createElement('div');d.textContent=t;l.appendChild(d);l.scrollTop=l.scrollHeight}
 // ポップアップは、クリック・タップ・キーのどれかを押すまで表示する(超高速モードだけ自動で閉じる)
 function waitDismiss(ms){
   if(S.speed<=.1)return sleep(ms);
@@ -790,9 +793,9 @@ async function mainLoop(){
     renderPlayers();renderTokens();if(S.mode==='news')renderNewsBox();
     $('#turn').innerHTML=`<span class="dot" style="display:inline-block;background:${p.color}"></span> ${p.name}の番 (${G.round}周目)`;
     if(p.skip>0){
-      p.skip--;log(`💤 ${p.name}はお休み`);await showCard('💤',`${p.name}は一回休み`);
+      const he=histBegin(p);p.skip--;log(`💤 ${p.name}はお休み`);await showCard('💤',`${p.name}は一回休み`);histEnd(p,he,true);
     }else{
-      await playTurn(p);
+      const he=histBegin(p);await playTurn(p);histEnd(p,he);
     }
     if(G.firstGoal&&!p.done){
       p.last--;
@@ -1135,6 +1138,41 @@ function cpuPick(p){
   }
   return cand[Math.floor(Math.random()*cand.length)];
 }
+/* ---------- 止まった場所の履歴 ---------- */
+function histBegin(p){
+  const e={round:G.round,name:p.name,color:p.color,roll:null,notes:[],age:p.age,year:yearOf(p),icon:'',label:''};
+  G.cur=e;return e;
+}
+function histEnd(p,e,skipped){
+  const t=G.board[p.pos],tl=TILE[t]||['',''];
+  e.icon=skipped?'💤':tl[0];
+  e.label=skipped?'一回休み':(tl[1]||LEGEND[t]||'通常マス');
+  e.age=p.age;e.year=yearOf(p);
+  G.history.push(e);G.cur=null;
+}
+function histHtml(list,rev){
+  const a=rev?[...list].reverse():list;
+  if(!a.length)return '<p>まだ履歴がありません。</p>';
+  return a.map(e=>'<div class="he"><div class="hh"><span class="dot" style="display:inline-block;background:'+e.color+'"></span><b>'+esc(e.name)+'</b> <small>'+e.round+'周目・'+e.age+'歳('+e.year+'年)</small></div>'
+    +'<div class="hl">'+e.icon+' '+esc(e.label)+(e.roll?' <small>(ルーレット'+e.roll+')</small>':'')+'</div>'
+    +(e.notes.length?'<ul>'+e.notes.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>':'')+'</div>').join('');
+}
+function historyDetails(list){
+  return '<details class="tl"><summary>📜 止まった場所の履歴(全'+list.length+'回)</summary>'+histHtml(list,false)+'</details>';
+}
+function showHistory(){
+  if(!G)return;
+  modal('<h2>📜 止まった場所の履歴</h2><div style="font-size:.85rem;opacity:.75">新しい順・全'+G.history.length+'回</div>'+histHtml(G.history,true),['とじる']);
+}
+function saveHistory(){
+  try{localStorage.setItem('sugoroku-last',JSON.stringify({at:Date.now(),course:G.course.emoji+G.course.name,year:G.startYear,
+    entries:G.history.map(e=>Object.assign({},e,{notes:e.notes.slice(0,8)}))}))}catch(e){}
+}
+function showLastHistory(){
+  let d=null;try{d=JSON.parse(localStorage.getItem('sugoroku-last'))}catch(e){}
+  if(!d)return;
+  modal('<h2>📜 前回のゲームの履歴</h2><div style="font-size:.85rem;opacity:.75">'+esc(d.course)+'・'+d.year+'年スタート・'+esc(new Date(d.at).toLocaleString('ja-JP'))+'</div>'+histHtml(d.entries,false),['とじる']);
+}
 function nextTurn(){
   let n=0;
   do{G.turn=(G.turn+1)%G.players.length;if(G.turn===0){G.round++;onRound()}n++}while(G.players[G.turn].done&&n<10);
@@ -1199,7 +1237,7 @@ async function playTurn(p){
   }
   if(mode===2)p.items.dice2--;
   const vals=await rollDice(mode,forced);
-  const total=Math.max(...vals);
+  const total=Math.max(...vals);if(G.cur)G.cur.roll=total;
   $('#dice').textContent=total;
   log(`🎡 ${p.name}は${vals.join(' と ')}${mode===2?' → '+total+'を採用':''}!`);
   await sleep(350);
@@ -1450,7 +1488,7 @@ async function finishGame(){
     html+='<div class="tl-y"><div class="tl-h"><b>'+y+'年</b> <span>🗞 '+esc(newsOf(y))+'</span></div>'
       +byYear[y].map(([p,e])=>'<div class="tl-e"><span class="dot" style="display:inline-block;width:10px;height:10px;background:'+p.color+'"></span> '+esc(p.name)+' '+e.age+'歳 '+e.icon+' '+esc(e.text)+'</div>').join('')+'</div>';
   });
-  html+='</details></div>';
+  html+='</details>'+historyDetails(G.history)+'</div>';saveHistory();
   const i=await modal(html,['🔁 もう一度(同じ設定)','⚙ 設定にもどる']);
   if(i===0)startGame();else toTitle();
 }
@@ -1465,6 +1503,8 @@ $('#startBtn').onclick=async()=>{
   if(S.mode==='news'){b.disabled=true;b.textContent='📰 その年のできごとを取得中…';await loadEra(S.startYear);b.disabled=false;b.textContent='🚩 スタート!'}
   startGame();
 };
+$('#histBtn').onclick=showHistory;
+$('#lastHistBtn').onclick=showLastHistory;
 $('#zoomBtn').onclick=()=>{zoomOn=!zoomOn;$('#zoomBtn').textContent=zoomOn?'🔍 全体を見る':'🔎 手番のところを拡大';if(G)focus()};
 $('#quitBtn').onclick=async()=>{
   const i=await modal('<h2>タイトルにもどりますか?</h2>',['もどる','つづける']);
